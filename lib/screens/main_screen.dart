@@ -80,7 +80,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     }
     await ref.read(notesProvider).addTextNote(text);
     _controller.clear();
-    _focusNode.requestFocus();
+    _focusNode.unfocus();
   }
 
   @override
@@ -94,44 +94,64 @@ class _MainScreenState extends ConsumerState<MainScreen> {
             children: [
               const SizedBox(height: 48),
               const Spacer(),
-              Text(
-                'Hello, there 👋',
-                style: AppTextStyles.title,
-                textAlign: TextAlign.center,
+              Column(
+                children: [
+                  Text(
+                    'Hello, there 👋',
+                    style: AppTextStyles.primary.copyWith(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  Text(
+                    'Settings to the left, notes on the right',
+                    style: AppTextStyles.secondary.copyWith(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.textSecondary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
               const Spacer(),
               Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: AppColors.bgCard,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: TextField(
-                        controller: _controller,
-                        focusNode: _focusNode,
-                        keyboardType: TextInputType.multiline,
-                        textInputAction: TextInputAction.newline,
-                        minLines: 1,
-                        maxLines: null,
-                        textAlignVertical: TextAlignVertical.center,
-                        onSubmitted: (_) => _submitText(),
-                        decoration: InputDecoration(
-                          hintText: 'Type here…',
-                          hintStyle: AppTextStyles.secondary,
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
-                          border: InputBorder.none,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 48),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.bgCard,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: AppColors.border),
                         ),
-                        style: AppTextStyles.primary.copyWith(height: 1.2),
+                        child: TextField(
+                          controller: _controller,
+                          focusNode: _focusNode,
+                          keyboardType: TextInputType.multiline,
+                          textInputAction: TextInputAction.newline,
+                          minLines: 1,
+                          maxLines: null,
+                          textAlignVertical: TextAlignVertical.center,
+                          onSubmitted: (_) => _submitText(),
+                          decoration: InputDecoration(
+                            hintText: 'Type here…',
+                            hintStyle: AppTextStyles.secondary,
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            border: InputBorder.none,
+                          ),
+                          style: AppTextStyles.primary.copyWith(height: 1.2),
+                        ),
                       ),
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(left: 10),
+                    padding: const EdgeInsets.only(left: 8),
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 180),
                       switchInCurve: Curves.easeOut,
