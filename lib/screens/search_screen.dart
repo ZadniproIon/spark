@@ -72,7 +72,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         : ListView.builder(
                             itemCount: results.length,
                             itemBuilder: (context, index) {
-                              return NoteCard(note: results[index], maxLines: 3);
+                              return NoteCard(note: results[index]);
                             },
                           ),
               ),

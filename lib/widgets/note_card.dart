@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../models/note.dart';
 import '../theme/colors.dart';
@@ -12,11 +13,9 @@ class NoteCard extends ConsumerWidget {
   const NoteCard({
     super.key,
     required this.note,
-    this.maxLines = 4,
   });
 
   final Note note;
-  final int maxLines;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,13 +23,13 @@ class NoteCard extends ConsumerWidget {
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         color: AppColors.bgCard,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           onLongPress: () => showNoteContextMenu(context, ref, note),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -52,14 +51,16 @@ class NoteCard extends ConsumerWidget {
                 else
                   Text(
                     note.content,
-                    style: AppTextStyles.primary,
-                    maxLines: maxLines,
-                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.primary.copyWith(height: 1.2),
                   ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Text(
                   formatNoteDate(note.updatedAt),
-                  style: AppTextStyles.metadata,
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),

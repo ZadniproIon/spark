@@ -26,51 +26,56 @@ class NotesScreen extends ConsumerWidget {
       backgroundColor: AppColors.bg,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Stack(
+            fit: StackFit.expand,
             children: [
-              Row(
-                children: [
-                  SparkIconButton(
-                    icon: LucideIcons.arrowLeft,
-                    onPressed: onBack,
-                    isCircular: true,
-                    borderColor: AppColors.border,
-                    backgroundColor: AppColors.bgCard,
-                  ),
-                  const Spacer(),
-                  SparkIconButton(
-                    icon: LucideIcons.search,
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const SearchScreen(),
-                        ),
-                      );
-                    },
-                    isCircular: true,
-                    borderColor: AppColors.border,
-                    backgroundColor: AppColors.bgCard,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: controller.isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : notes.isEmpty
-                        ? Center(
-                            child: Text(
-                              'No notes yet',
-                              style: AppTextStyles.secondary,
-                            ),
-                          )
-                        : ListView.builder(
-                            itemCount: notes.length,
-                            itemBuilder: (context, index) {
-                              return NoteCard(note: notes[index]);
-                            },
+              controller.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : notes.isEmpty
+                      ? Center(
+                          child: Text(
+                            'No notes yet',
+                            style: AppTextStyles.secondary,
                           ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.only(top: 64),
+                          itemCount: notes.length,
+                          itemBuilder: (context, index) {
+                            return NoteCard(note: notes[index]);
+                          },
+                        ),
+              Align(
+                alignment: Alignment.topCenter,
+                child: SizedBox(
+                  height: 48,
+                  child: Row(
+                    children: [
+                      SparkIconButton(
+                        icon: LucideIcons.arrowLeft,
+                        onPressed: onBack,
+                        isCircular: true,
+                        borderColor: AppColors.border,
+                        backgroundColor: AppColors.bgCard,
+                      ),
+                      const Spacer(),
+                      SparkIconButton(
+                        icon: LucideIcons.search,
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const SearchScreen(),
+                            ),
+                          );
+                        },
+                        isCircular: true,
+                        borderColor: AppColors.border,
+                        backgroundColor: AppColors.bgCard,
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
