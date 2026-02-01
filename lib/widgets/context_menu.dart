@@ -24,7 +24,7 @@ Future<void> showNoteContextMenu(
     isScrollControlled: true,
     builder: (sheetContext) {
       final colors = sheetContext.sparkColors;
-      return SafeArea(
+      return SafeArea(bottom: false,
         child: Container(
           margin: const EdgeInsets.all(16),
           decoration: BoxDecoration(

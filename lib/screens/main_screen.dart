@@ -89,6 +89,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     return Scaffold(
       backgroundColor: colors.bg,
       body: SafeArea(
+        bottom: false,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: Column(

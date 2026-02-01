@@ -63,13 +63,28 @@ class NoteCard extends ConsumerWidget {
                     ),
                   ),
                 const SizedBox(height: 8),
-                Text(
-                  formatNoteDate(note.updatedAt),
-                  style: GoogleFonts.jetBrainsMono(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: colors.textSecondary,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        formatNoteDate(note.updatedAt),
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                    ),
+                    if (note.isPinned)
+                      Text(
+                        'Pinned',
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),
