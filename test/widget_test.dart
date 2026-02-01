@@ -16,7 +16,10 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
-          home: MainScreen(onOpenNotes: () {}),
+          home: MainScreen(
+            onOpenNotes: () {},
+            onOpenMenu: () {},
+          ),
         ),
       ),
     );

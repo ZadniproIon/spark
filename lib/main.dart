@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import 'models/note.dart';
 import 'screens/edit_note_screen.dart';
+import 'screens/menu_screen.dart';
 import 'screens/main_screen.dart';
 import 'screens/notes_screen.dart';
 import 'theme/app_theme.dart';
@@ -53,7 +54,7 @@ class _HomeShellState extends State<HomeShell> {
 
   void _openNotes() {
     _controller.animateToPage(
-      0,
+      2,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOut,
     );
@@ -62,6 +63,14 @@ class _HomeShellState extends State<HomeShell> {
   void _openMain() {
     _controller.animateToPage(
       1,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
+  void _openMenu() {
+    _controller.animateToPage(
+      0,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOut,
     );
@@ -79,8 +88,9 @@ class _HomeShellState extends State<HomeShell> {
       controller: _controller,
       physics: const BouncingScrollPhysics(),
       children: [
+        MenuScreen(onBack: _openMain),
+        MainScreen(onOpenNotes: _openNotes, onOpenMenu: _openMenu),
         NotesScreen(onBack: _openMain),
-        MainScreen(onOpenNotes: _openNotes),
       ],
     );
   }

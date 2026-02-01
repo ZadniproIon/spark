@@ -5,11 +5,15 @@ import 'package:url_launcher/url_launcher.dart';
 import '../theme/colors.dart';
 import '../theme/shadows.dart';
 import '../theme/text_styles.dart';
-import '../widgets/icon_button.dart';
 import 'recycle_bin_screen.dart';
 
 class MenuScreen extends StatelessWidget {
-  const MenuScreen({super.key});
+  const MenuScreen({
+    super.key,
+    this.onBack,
+  });
+
+  final VoidCallback? onBack;
 
   Future<void> _launchUrl(BuildContext context, String url) async {
     final uri = Uri.parse(url);
@@ -30,18 +34,7 @@ class MenuScreen extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: ListView(
             children: [
-              Row(
-                children: [
-                  SparkIconButton(
-                    icon: LucideIcons.arrowLeft,
-                    onPressed: () => Navigator.of(context).pop(),
-                    showShadow: true,
-                    borderColor: AppColors.border,
-                    backgroundColor: AppColors.bgCard,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -96,7 +89,7 @@ class MenuScreen extends StatelessWidget {
               _MenuItem(
                 icon: LucideIcons.github,
                 label: 'GitHub repository',
-                onTap: () => _launchUrl(context, 'https://github.com/example/spark'),
+                onTap: () => _launchUrl(context, 'https://github.com/ZadniproIon/spark'),
               ),
               const SizedBox(height: 24),
               Text('Feedback', style: AppTextStyles.section),
