@@ -74,7 +74,7 @@ class _HomeShellState extends State<HomeShell> {
       children: [
         MenuScreen(onBack: _openMain),
         const MainScreen(),
-        NotesScreen(onBack: _openMain),
+        const NotesScreen(),
       ],
     );
   }
