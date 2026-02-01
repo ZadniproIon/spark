@@ -23,14 +23,15 @@ Future<void> showNoteContextMenu(
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     builder: (sheetContext) {
+      final colors = sheetContext.sparkColors;
       return SafeArea(
         child: Container(
           margin: const EdgeInsets.all(16),
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: AppColors.bgCard,
+            color: colors.bgCard,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: colors.border),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -110,7 +111,8 @@ class _MenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isDestructive ? AppColors.red : AppColors.textPrimary;
+    final colors = context.sparkColors;
+    final color = isDestructive ? colors.red : colors.textPrimary;
     return InkWell(
       onTap: onTap,
       child: Padding(

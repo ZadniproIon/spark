@@ -18,19 +18,20 @@ class SparkSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sparkColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
+        color: colors.bgCard,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: colors.border),
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             LucideIcons.search,
             size: 18,
-            color: AppColors.textSecondary,
+            color: colors.textSecondary,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -39,10 +40,12 @@ class SparkSearchBar extends StatelessWidget {
               onChanged: onChanged,
               decoration: InputDecoration(
                 hintText: hintText,
-                hintStyle: AppTextStyles.secondary,
+                hintStyle: AppTextStyles.secondary.copyWith(
+                  color: colors.textSecondary,
+                ),
                 border: InputBorder.none,
               ),
-              style: AppTextStyles.primary,
+              style: AppTextStyles.primary.copyWith(color: colors.textPrimary),
             ),
           ),
           ValueListenableBuilder<TextEditingValue>(
@@ -56,10 +59,10 @@ class SparkSearchBar extends StatelessWidget {
                   controller.clear();
                   onChanged('');
                 },
-                child: const Icon(
+                child: Icon(
                   LucideIcons.x,
                   size: 18,
-                  color: AppColors.textSecondary,
+                  color: colors.textSecondary,
                 ),
               );
             },

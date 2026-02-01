@@ -1,12 +1,14 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../providers/theme_provider.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
 import 'recycle_bin_screen.dart';
 
-class MenuScreen extends StatelessWidget {
+class MenuScreen extends ConsumerWidget {
   const MenuScreen({
     super.key,
     this.onBack,
@@ -20,9 +22,12 @@ class MenuScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.sparkColors;
+    final themePreference = ref.watch(themeProvider);
+
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: colors.bg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -32,38 +37,55 @@ class MenuScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.bgCard,
+                  color: colors.bgCard,
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: colors.border),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       LucideIcons.flame,
-                      color: AppColors.flame,
+                      color: colors.flame,
                       size: 26,
                     ),
                     const SizedBox(width: 12),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Spark', style: AppTextStyles.title),
+                        Text(
+                          'Spark',
+                          style: AppTextStyles.title.copyWith(
+                            color: colors.textPrimary,
+                          ),
+                        ),
                         const SizedBox(height: 2),
-                        Text('Version 1.0', style: AppTextStyles.secondary),
+                        Text(
+                          'Version 1.0',
+                          style: AppTextStyles.secondary.copyWith(
+                            color: colors.textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
-              Text('General', style: AppTextStyles.section),
+              Text(
+                'General',
+                style: AppTextStyles.section.copyWith(
+                  color: colors.textPrimary,
+                ),
+              ),
               const SizedBox(height: 12),
               _MenuItem(
                 icon: LucideIcons.moon,
                 label: 'Theme',
-                trailing: Switch(
-                  value: false,
-                  onChanged: (_) {},
+                trailing: _ThemeSelect(
+                  value: themePreference,
+                  onChanged: (value) {
+                    ref.read(themeProvider.notifier).setTheme(value);
+                  },
                 ),
               ),
               _MenuItem(
@@ -78,10 +100,18 @@ class MenuScreen extends StatelessWidget {
               _MenuItem(
                 icon: LucideIcons.github,
                 label: 'GitHub repository',
-                onTap: () => _launchUrl(context, 'https://github.com/ZadniproIon/spark'),
+                onTap: () => _launchUrl(
+                  context,
+                  'https://github.com/ZadniproIon/spark',
+                ),
               ),
               const SizedBox(height: 24),
-              Text('Feedback', style: AppTextStyles.section),
+              Text(
+                'Feedback',
+                style: AppTextStyles.section.copyWith(
+                  color: colors.textPrimary,
+                ),
+              ),
               const SizedBox(height: 12),
               _MenuItem(
                 icon: LucideIcons.messageCircle,
@@ -99,7 +129,12 @@ class MenuScreen extends StatelessWidget {
                 onTap: () {},
               ),
               const SizedBox(height: 24),
-              Text('Account', style: AppTextStyles.section),
+              Text(
+                'Account',
+                style: AppTextStyles.section.copyWith(
+                  color: colors.textPrimary,
+                ),
+              ),
               const SizedBox(height: 12),
               _MenuItem(
                 icon: LucideIcons.atSign,
@@ -130,6 +165,58 @@ class MenuScreen extends StatelessWidget {
   }
 }
 
+class _ThemeSelect extends StatelessWidget {
+  const _ThemeSelect({
+    required this.value,
+    required this.onChanged,
+  });
+
+  final ThemePreference value;
+  final ValueChanged<ThemePreference> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.sparkColors;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: colors.bgCard,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.border),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<ThemePreference>(
+          value: value,
+          isDense: true,
+          icon: Icon(
+            LucideIcons.chevronDown,
+            size: 16,
+            color: colors.textSecondary,
+          ),
+          items: ThemePreference.values
+              .map(
+                (pref) => DropdownMenuItem<ThemePreference>(
+                  value: pref,
+                  child: Text(
+                    pref.label,
+                    style: AppTextStyles.secondary.copyWith(
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: (value) {
+            if (value != null) {
+              onChanged(value);
+            }
+          },
+        ),
+      ),
+    );
+  }
+}
+
 class _MenuItem extends StatelessWidget {
   const _MenuItem({
     required this.icon,
@@ -147,13 +234,14 @@ class _MenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isDestructive ? AppColors.red : AppColors.textPrimary;
+    final colors = context.sparkColors;
+    final color = isDestructive ? colors.red : colors.textPrimary;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
+        color: colors.bgCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: colors.border),
       ),
       child: ListTile(
         onTap: onTap,
@@ -162,7 +250,11 @@ class _MenuItem extends StatelessWidget {
           label,
           style: AppTextStyles.primary.copyWith(color: color),
         ),
-        trailing: trailing ?? const Icon(LucideIcons.chevronRight, size: 18),
+        trailing: trailing ?? Icon(
+          LucideIcons.chevronRight,
+          size: 18,
+          color: colors.textSecondary,
+        ),
       ),
     );
   }

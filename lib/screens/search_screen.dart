@@ -28,11 +28,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sparkColors;
     final notesController = ref.watch(notesProvider);
     final results = notesController.search(_query);
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: colors.bg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -44,8 +45,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     icon: LucideIcons.arrowLeft,
                     onPressed: () => Navigator.of(context).pop(),
                     isCircular: true,
-                    borderColor: AppColors.border,
-                    backgroundColor: AppColors.bgCard,
+                    borderColor: colors.border,
+                    backgroundColor: colors.bgCard,
+                    iconColor: colors.textPrimary,
                   ),
                 ],
               ),
@@ -66,7 +68,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                               _query.isEmpty
                                   ? 'Search your notes'
                                   : 'No results found',
-                              style: AppTextStyles.secondary,
+                              style: AppTextStyles.secondary.copyWith(
+                                color: colors.textSecondary,
+                              ),
                             ),
                           )
                         : ListView.builder(

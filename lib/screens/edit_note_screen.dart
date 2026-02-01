@@ -44,8 +44,9 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sparkColors;
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: colors.bg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -57,16 +58,18 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
                     icon: LucideIcons.x,
                     onPressed: () => Navigator.of(context).pop(),
                     isCircular: true,
-                    borderColor: AppColors.border,
-                    backgroundColor: AppColors.bgCard,
+                    borderColor: colors.border,
+                    backgroundColor: colors.bgCard,
+                    iconColor: colors.textPrimary,
                   ),
                   const Spacer(),
                   SparkIconButton(
                     icon: LucideIcons.check,
                     onPressed: _save,
                     isCircular: true,
-                    borderColor: AppColors.border,
-                    backgroundColor: AppColors.bgCard,
+                    borderColor: colors.border,
+                    backgroundColor: colors.bgCard,
+                    iconColor: colors.textPrimary,
                   ),
                 ],
               ),
@@ -74,9 +77,9 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.bgCard,
+                  color: colors.bgCard,
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: colors.border),
                 ),
                 child: TextField(
                   controller: _controller,
@@ -85,7 +88,7 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                   ),
-                  style: AppTextStyles.primary,
+                  style: AppTextStyles.primary.copyWith(color: colors.textPrimary),
                 ),
               ),
             ],

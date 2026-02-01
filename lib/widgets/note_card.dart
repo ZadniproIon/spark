@@ -19,12 +19,13 @@ class NoteCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.sparkColors;
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
+        color: colors.bgCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: colors.border),
       ),
       child: Material(
         color: Colors.transparent,
@@ -39,19 +40,27 @@ class NoteCard extends ConsumerWidget {
                 if (note.type == NoteType.voice)
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         LucideIcons.mic,
                         size: 18,
-                        color: AppColors.textSecondary,
+                        color: colors.textSecondary,
                       ),
                       const SizedBox(width: 8),
-                      Text('Voice note', style: AppTextStyles.primary),
+                      Text(
+                        'Voice note',
+                        style: AppTextStyles.primary.copyWith(
+                          color: colors.textPrimary,
+                        ),
+                      ),
                     ],
                   )
                 else
                   Text(
                     note.content,
-                    style: AppTextStyles.primary.copyWith(height: 1.2),
+                    style: AppTextStyles.primary.copyWith(
+                      height: 1.2,
+                      color: colors.textPrimary,
+                    ),
                   ),
                 const SizedBox(height: 8),
                 Text(
@@ -59,7 +68,7 @@ class NoteCard extends ConsumerWidget {
                   style: GoogleFonts.jetBrainsMono(
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
-                    color: AppColors.textSecondary,
+                    color: colors.textSecondary,
                   ),
                 ),
               ],

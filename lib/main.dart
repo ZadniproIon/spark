@@ -7,6 +7,7 @@ import 'screens/edit_note_screen.dart';
 import 'screens/menu_screen.dart';
 import 'screens/main_screen.dart';
 import 'screens/notes_screen.dart';
+import 'providers/theme_provider.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -19,15 +20,18 @@ Future<void> main() async {
   runApp(const ProviderScope(child: SparkApp()));
 }
 
-class SparkApp extends StatelessWidget {
+class SparkApp extends ConsumerWidget {
   const SparkApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themePreference = ref.watch(themeProvider);
     return MaterialApp(
       title: 'Spark',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: themePreference.themeMode,
       onGenerateRoute: (settings) {
         if (settings.name == '/edit') {
           final note = settings.arguments as Note;

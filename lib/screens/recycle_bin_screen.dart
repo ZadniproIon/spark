@@ -14,11 +14,12 @@ class RecycleBinScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.sparkColors;
     final controller = ref.watch(notesProvider);
     final notes = controller.trashedNotes;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: colors.bg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -30,11 +31,17 @@ class RecycleBinScreen extends ConsumerWidget {
                     icon: LucideIcons.arrowLeft,
                     onPressed: () => Navigator.of(context).pop(),
                     isCircular: true,
-                    borderColor: AppColors.border,
-                    backgroundColor: AppColors.bgCard,
+                    borderColor: colors.border,
+                    backgroundColor: colors.bgCard,
+                    iconColor: colors.textPrimary,
                   ),
                   const Spacer(),
-                  Text('Recycle bin', style: AppTextStyles.section),
+                  Text(
+                    'Recycle bin',
+                    style: AppTextStyles.section.copyWith(
+                      color: colors.textPrimary,
+                    ),
+                  ),
                   const Spacer(),
                   const SizedBox(width: 48),
                 ],
@@ -47,7 +54,9 @@ class RecycleBinScreen extends ConsumerWidget {
                         ? Center(
                             child: Text(
                               'Recycle bin is empty',
-                              style: AppTextStyles.secondary,
+                              style: AppTextStyles.secondary.copyWith(
+                                color: colors.textSecondary,
+                              ),
                             ),
                           )
                         : ListView.builder(
@@ -72,27 +81,28 @@ class _RecycleNoteCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.sparkColors;
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
+        color: colors.bgCard,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             note.type == NoteType.voice ? 'Voice note' : note.content,
-            style: AppTextStyles.primary,
+            style: AppTextStyles.primary.copyWith(color: colors.textPrimary),
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 8),
           Text(
             formatNoteDate(note.updatedAt),
-            style: AppTextStyles.metadata,
+            style: AppTextStyles.metadata.copyWith(color: colors.textSecondary),
           ),
           const SizedBox(height: 12),
           Row(
@@ -103,8 +113,8 @@ class _RecycleNoteCard extends ConsumerWidget {
                   icon: const Icon(LucideIcons.undo2, size: 16),
                   label: const Text('Restore'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textPrimary,
-                    side: const BorderSide(color: AppColors.border),
+                    foregroundColor: colors.textPrimary,
+                    side: BorderSide(color: colors.border),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     textStyle: AppTextStyles.button,
                   ),
@@ -117,10 +127,10 @@ class _RecycleNoteCard extends ConsumerWidget {
                   icon: const Icon(LucideIcons.trash2, size: 16),
                   label: const Text('Delete'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.red,
-                    side: const BorderSide(color: AppColors.red),
+                    foregroundColor: colors.red,
+                    side: BorderSide(color: colors.red),
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    textStyle: AppTextStyles.button.copyWith(color: AppColors.red),
+                    textStyle: AppTextStyles.button.copyWith(color: colors.red),
                   ),
                 ),
               ),

@@ -6,35 +6,43 @@ import 'text_styles.dart';
 
 class AppTheme {
   static ThemeData light() {
-    final base = ThemeData.light();
+    return _buildTheme(ThemeData.light(), SparkColors.light);
+  }
+
+  static ThemeData dark() {
+    return _buildTheme(ThemeData.dark(), SparkColors.dark);
+  }
+
+  static ThemeData _buildTheme(ThemeData base, SparkColors colors) {
     final textTheme = GoogleFonts.dmSansTextTheme(base.textTheme).copyWith(
-      titleLarge: AppTextStyles.title,
-      titleMedium: AppTextStyles.section,
-      bodyLarge: AppTextStyles.primary,
-      bodyMedium: AppTextStyles.primary,
-      bodySmall: AppTextStyles.secondary,
+      titleLarge: AppTextStyles.title.copyWith(color: colors.textPrimary),
+      titleMedium: AppTextStyles.section.copyWith(color: colors.textPrimary),
+      bodyLarge: AppTextStyles.primary.copyWith(color: colors.textPrimary),
+      bodyMedium: AppTextStyles.primary.copyWith(color: colors.textPrimary),
+      bodySmall: AppTextStyles.secondary.copyWith(color: colors.textSecondary),
     );
 
     return base.copyWith(
-      scaffoldBackgroundColor: AppColors.bg,
-      cardColor: AppColors.bgCard,
-      dividerColor: AppColors.border,
+      scaffoldBackgroundColor: colors.bg,
+      cardColor: colors.bgCard,
+      dividerColor: colors.border,
       colorScheme: base.colorScheme.copyWith(
-        primary: AppColors.flame,
-        secondary: AppColors.red,
-        surface: AppColors.bgCard,
+        primary: colors.flame,
+        secondary: colors.red,
+        surface: colors.bgCard,
         onPrimary: Colors.white,
         onSecondary: Colors.white,
-        onSurface: AppColors.textPrimary,
+        onSurface: colors.textPrimary,
       ),
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.bg,
+        backgroundColor: colors.bg,
         elevation: 0,
         scrolledUnderElevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        titleTextStyle: AppTextStyles.title,
+        iconTheme: IconThemeData(color: colors.textPrimary),
+        titleTextStyle: AppTextStyles.title.copyWith(color: colors.textPrimary),
       ),
+      extensions: [colors],
     );
   }
 }

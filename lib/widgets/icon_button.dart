@@ -26,15 +26,14 @@ class SparkIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sparkColors;
     final radius = BorderRadius.circular(isCircular ? 999 : 14);
     return Container(
       decoration: BoxDecoration(
         color: backgroundColor ?? Colors.transparent,
         borderRadius: isCircular ? null : radius,
         shape: isCircular ? BoxShape.circle : BoxShape.rectangle,
-        border: borderColor == null
-            ? null
-            : Border.all(color: borderColor ?? AppColors.border),
+        border: borderColor == null ? null : Border.all(color: borderColor!),
       ),
       child: Material(
         color: Colors.transparent,
@@ -48,7 +47,7 @@ class SparkIconButton extends StatelessWidget {
             child: Icon(
               icon,
               size: size,
-              color: iconColor ?? AppColors.textPrimary,
+              color: iconColor ?? colors.textPrimary,
             ),
           ),
         ),

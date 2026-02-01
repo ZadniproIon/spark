@@ -85,8 +85,9 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sparkColors;
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: colors.bg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -101,6 +102,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                     style: AppTextStyles.primary.copyWith(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
+                      color: colors.textPrimary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -109,7 +111,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                     style: AppTextStyles.secondary.copyWith(
                       fontSize: 16,
                       fontWeight: FontWeight.w400,
-                      color: AppColors.textSecondary,
+                      color: colors.textSecondary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -125,9 +127,9 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                         decoration: BoxDecoration(
-                          color: AppColors.bgCard,
+                          color: colors.bgCard,
                           borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: AppColors.border),
+                          border: Border.all(color: colors.border),
                         ),
                         child: TextField(
                           controller: _controller,
@@ -140,12 +142,17 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                           onSubmitted: (_) => _submitText(),
                           decoration: InputDecoration(
                             hintText: 'Type here…',
-                            hintStyle: AppTextStyles.secondary,
+                            hintStyle: AppTextStyles.secondary.copyWith(
+                              color: colors.textSecondary,
+                            ),
                             isDense: true,
                             contentPadding: EdgeInsets.zero,
                             border: InputBorder.none,
                           ),
-                          style: AppTextStyles.primary.copyWith(height: 1.2),
+                          style: AppTextStyles.primary.copyWith(
+                            height: 1.2,
+                            color: colors.textPrimary,
+                          ),
                         ),
                       ),
                     ),
@@ -177,11 +184,11 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                                 : LucideIcons.mic),
                         onPressed: _hasText ? _submitText : _toggleRecording,
                         isCircular: true,
-                        backgroundColor: AppColors.bgCard,
-                        borderColor: AppColors.border,
+                        backgroundColor: colors.bgCard,
+                        borderColor: colors.border,
                         iconColor: _isRecording && !_hasText
-                            ? AppColors.red
-                            : AppColors.textPrimary,
+                            ? colors.red
+                            : colors.textPrimary,
                         padding: 12,
                       ),
                     ),
