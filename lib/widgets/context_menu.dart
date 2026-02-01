@@ -27,10 +27,9 @@ Future<void> showNoteContextMenu(
       return SafeArea(
         child: Container(
           margin: const EdgeInsets.all(16),
-          padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
             color: colors.bgCard,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(color: colors.border),
           ),
           child: Column(
@@ -83,6 +82,7 @@ Future<void> showNoteContextMenu(
                 icon: LucideIcons.trash2,
                 label: 'Move to trash',
                 isDestructive: true,
+                showDivider: false,
                 onTap: () async {
                   Navigator.of(sheetContext).pop();
                   await ref.read(notesProvider).moveToTrash(note);
@@ -102,32 +102,45 @@ class _MenuItem extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.isDestructive = false,
+    this.showDivider = true,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
   final bool isDestructive;
+  final bool showDivider;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.sparkColors;
     final color = isDestructive ? colors.red : colors.textPrimary;
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        child: Row(
-          children: [
-            Icon(icon, size: 18, color: color),
-            const SizedBox(width: 12),
-            Text(
-              label,
-              style: AppTextStyles.primary.copyWith(color: color),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Icon(icon, size: 20, color: color),
+                const SizedBox(width: 12),
+                Text(
+                  label,
+                  style: AppTextStyles.primary.copyWith(color: color),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+        if (showDivider)
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: colors.border,
+          ),
+      ],
     );
   }
 }
