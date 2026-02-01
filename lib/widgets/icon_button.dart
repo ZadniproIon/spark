@@ -1,20 +1,18 @@
 ﻿import 'package:flutter/material.dart';
 
 import '../theme/colors.dart';
-import '../theme/shadows.dart';
 
 class SparkIconButton extends StatelessWidget {
   const SparkIconButton({
     super.key,
     required this.icon,
     required this.onPressed,
-    this.size = 20,
+    this.size = 24,
     this.iconColor,
     this.backgroundColor,
     this.borderColor,
     this.padding = 12,
     this.isCircular = false,
-    this.showShadow = false,
   });
 
   final IconData icon;
@@ -25,7 +23,6 @@ class SparkIconButton extends StatelessWidget {
   final Color? borderColor;
   final double padding;
   final bool isCircular;
-  final bool showShadow;
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +35,6 @@ class SparkIconButton extends StatelessWidget {
         border: borderColor == null
             ? null
             : Border.all(color: borderColor ?? AppColors.border),
-        boxShadow: showShadow ? const [AppShadows.shadow1] : null,
       ),
       child: Material(
         color: Colors.transparent,

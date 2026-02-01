@@ -3,7 +3,6 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/colors.dart';
-import '../theme/shadows.dart';
 import '../theme/text_styles.dart';
 import 'recycle_bin_screen.dart';
 
@@ -17,12 +16,7 @@ class MenuScreen extends StatelessWidget {
 
   Future<void> _launchUrl(BuildContext context, String url) async {
     final uri = Uri.parse(url);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open link')),
-      );
-    }
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   @override
@@ -41,7 +35,6 @@ class MenuScreen extends StatelessWidget {
                   color: AppColors.bgCard,
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(color: AppColors.border),
-                  boxShadow: const [AppShadows.shadow1],
                 ),
                 child: Row(
                   children: [
@@ -70,11 +63,7 @@ class MenuScreen extends StatelessWidget {
                 label: 'Theme',
                 trailing: Switch(
                   value: false,
-                  onChanged: (_) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Theme toggle coming soon')),
-                    );
-                  },
+                  onChanged: (_) {},
                 ),
               ),
               _MenuItem(
@@ -97,29 +86,17 @@ class MenuScreen extends StatelessWidget {
               _MenuItem(
                 icon: LucideIcons.messageCircle,
                 label: 'Send feedback',
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Feedback flow coming soon')),
-                  );
-                },
+                onTap: () {},
               ),
               _MenuItem(
                 icon: LucideIcons.bug,
                 label: 'Report bug',
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Bug report flow coming soon')),
-                  );
-                },
+                onTap: () {},
               ),
               _MenuItem(
                 icon: LucideIcons.star,
                 label: 'Request a feature',
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Feature requests coming soon')),
-                  );
-                },
+                onTap: () {},
               ),
               const SizedBox(height: 24),
               Text('Account', style: AppTextStyles.section),
@@ -127,39 +104,23 @@ class MenuScreen extends StatelessWidget {
               _MenuItem(
                 icon: LucideIcons.atSign,
                 label: 'Change email',
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Change email coming soon')),
-                  );
-                },
+                onTap: () {},
               ),
               _MenuItem(
                 icon: LucideIcons.lock,
                 label: 'Change password',
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Change password coming soon')),
-                  );
-                },
+                onTap: () {},
               ),
               _MenuItem(
                 icon: LucideIcons.logOut,
                 label: 'Log out',
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Logout coming soon')),
-                  );
-                },
+                onTap: () {},
               ),
               _MenuItem(
                 icon: LucideIcons.userX,
                 label: 'Delete account',
                 isDestructive: true,
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Delete account coming soon')),
-                  );
-                },
+                onTap: () {},
               ),
             ],
           ),
@@ -193,7 +154,6 @@ class _MenuItem extends StatelessWidget {
         color: AppColors.bgCard,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
-        boxShadow: const [AppShadows.shadow1],
       ),
       child: ListTile(
         onTap: onTap,

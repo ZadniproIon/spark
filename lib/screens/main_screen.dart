@@ -1,22 +1,16 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons/lucide_icons.dart';
-
 import '../providers/notes_provider.dart';
 import '../theme/colors.dart';
-import '../theme/shadows.dart';
 import '../theme/text_styles.dart';
 import '../widgets/icon_button.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import '../data/audio_recorder.dart';
 
 class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({
     super.key,
-    required this.onOpenNotes,
-    required this.onOpenMenu,
   });
-
-  final VoidCallback onOpenNotes;
-  final VoidCallback onOpenMenu;
 
   @override
   ConsumerState<MainScreen> createState() => _MainScreenState();
@@ -25,17 +19,58 @@ class MainScreen extends ConsumerStatefulWidget {
 class _MainScreenState extends ConsumerState<MainScreen> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  bool _hasText = false;
+  late final SparkAudioRecorder _recorder;
+  bool _isRecording = false;
 
   @override
   void initState() {
     super.initState();
+    _controller.addListener(_handleTextChange);
+    _recorder = SparkAudioRecorder();
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_handleTextChange);
     _controller.dispose();
     _focusNode.dispose();
+    _recorder.dispose();
     super.dispose();
+  }
+
+  void _handleTextChange() {
+    final hasText = _controller.text.trim().isNotEmpty;
+    if (hasText != _hasText) {
+      setState(() => _hasText = hasText);
+    }
+    if (hasText && _isRecording) {
+      _stopRecordingAndSave();
+    }
+  }
+
+  Future<void> _stopRecordingAndSave() async {
+    final path = await _recorder.stop();
+    if (!mounted) return;
+    setState(() => _isRecording = false);
+    if (path != null) {
+      await ref.read(notesProvider).addVoiceNote(path);
+    }
+  }
+
+  Future<void> _toggleRecording() async {
+    if (_isRecording) {
+      await _stopRecordingAndSave();
+      return;
+    }
+
+    final startedPath = await _recorder.start();
+    if (startedPath == null) {
+      return;
+    }
+    if (mounted) {
+      setState(() => _isRecording = true);
+    }
   }
 
   Future<void> _submitText() async {
@@ -46,11 +81,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     await ref.read(notesProvider).addTextNote(text);
     _controller.clear();
     _focusNode.requestFocus();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Note added')),
-      );
-    }
   }
 
   @override
@@ -59,28 +89,10 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       backgroundColor: AppColors.bg,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: Column(
             children: [
-              Row(
-                children: [
-                  SparkIconButton(
-                    icon: LucideIcons.menu,
-                    onPressed: widget.onOpenMenu,
-                    showShadow: true,
-                    borderColor: AppColors.border,
-                    backgroundColor: AppColors.bgCard,
-                  ),
-                  const Spacer(),
-                  SparkIconButton(
-                    icon: LucideIcons.list,
-                    onPressed: widget.onOpenNotes,
-                    showShadow: true,
-                    borderColor: AppColors.border,
-                    backgroundColor: AppColors.bgCard,
-                  ),
-                ],
-              ),
+              const SizedBox(height: 48),
               const Spacer(),
               Text(
                 'Hello, there 👋',
@@ -88,32 +100,73 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 textAlign: TextAlign.center,
               ),
               const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.bgCard,
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: AppColors.border),
-                  boxShadow: const [AppShadows.shadow1],
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.bgCard,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: AppColors.border),
+                      ),
                       child: TextField(
                         controller: _controller,
                         focusNode: _focusNode,
-                        textInputAction: TextInputAction.done,
+                        keyboardType: TextInputType.multiline,
+                        textInputAction: TextInputAction.newline,
+                        minLines: 1,
+                        maxLines: null,
+                        textAlignVertical: TextAlignVertical.center,
                         onSubmitted: (_) => _submitText(),
                         decoration: InputDecoration(
                           hintText: 'Type here…',
                           hintStyle: AppTextStyles.secondary,
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
                           border: InputBorder.none,
                         ),
-                        style: AppTextStyles.primary,
+                        style: AppTextStyles.primary.copyWith(height: 1.2),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 10),
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 180),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      transitionBuilder: (child, animation) {
+                        final slide = Tween<Offset>(
+                          begin: const Offset(0.2, 0),
+                          end: Offset.zero,
+                        ).animate(animation);
+                        final fade =
+                            Tween<double>(begin: 0, end: 1).animate(animation);
+                        return SlideTransition(
+                          position: slide,
+                          child: FadeTransition(opacity: fade, child: child),
+                        );
+                      },
+                      child: SparkIconButton(
+                        key: ValueKey(_hasText),
+                        icon: _hasText
+                            ? LucideIcons.send
+                            : (_isRecording
+                                ? LucideIcons.micOff
+                                : LucideIcons.mic),
+                        onPressed: _hasText ? _submitText : _toggleRecording,
+                        isCircular: true,
+                        backgroundColor: AppColors.bgCard,
+                        borderColor: AppColors.border,
+                        iconColor: _isRecording && !_hasText
+                            ? AppColors.red
+                            : AppColors.textPrimary,
+                        padding: 12,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

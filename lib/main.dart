@@ -52,25 +52,9 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   final PageController _controller = PageController(initialPage: 1);
 
-  void _openNotes() {
-    _controller.animateToPage(
-      2,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
-  }
-
   void _openMain() {
     _controller.animateToPage(
       1,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
-  }
-
-  void _openMenu() {
-    _controller.animateToPage(
-      0,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOut,
     );
@@ -89,7 +73,7 @@ class _HomeShellState extends State<HomeShell> {
       physics: const BouncingScrollPhysics(),
       children: [
         MenuScreen(onBack: _openMain),
-        MainScreen(onOpenNotes: _openNotes, onOpenMenu: _openMenu),
+        const MainScreen(),
         NotesScreen(onBack: _openMain),
       ],
     );

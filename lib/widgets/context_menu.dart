@@ -7,7 +7,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/note.dart';
 import '../providers/notes_provider.dart';
 import '../theme/colors.dart';
-import '../theme/shadows.dart';
 import '../theme/text_styles.dart';
 import '../utils/note_utils.dart';
 
@@ -32,7 +31,6 @@ Future<void> showNoteContextMenu(
             color: AppColors.bgCard,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: AppColors.border),
-            boxShadow: const [AppShadows.shadow1],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -59,10 +57,6 @@ Future<void> showNoteContextMenu(
                 onTap: () async {
                   Navigator.of(sheetContext).pop();
                   await Clipboard.setData(ClipboardData(text: note.content));
-                  if (!rootContext.mounted) return;
-                  ScaffoldMessenger.of(rootContext).showSnackBar(
-                    const SnackBar(content: Text('Copied to clipboard')),
-                  );
                 },
               ),
               if (url != null) ...[
@@ -72,10 +66,6 @@ Future<void> showNoteContextMenu(
                   onTap: () async {
                     Navigator.of(sheetContext).pop();
                     await Clipboard.setData(ClipboardData(text: url));
-                    if (!rootContext.mounted) return;
-                    ScaffoldMessenger.of(rootContext).showSnackBar(
-                      const SnackBar(content: Text('Link copied')),
-                    );
                   },
                 ),
                 _MenuItem(
@@ -84,12 +74,7 @@ Future<void> showNoteContextMenu(
                   onTap: () async {
                     Navigator.of(sheetContext).pop();
                     final uri = Uri.parse(url);
-                    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-                      if (!rootContext.mounted) return;
-                      ScaffoldMessenger.of(rootContext).showSnackBar(
-                        const SnackBar(content: Text('Could not open link')),
-                      );
-                    }
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
                   },
                 ),
               ],
@@ -100,18 +85,6 @@ Future<void> showNoteContextMenu(
                 onTap: () async {
                   Navigator.of(sheetContext).pop();
                   await ref.read(notesProvider).moveToTrash(note);
-                  if (!rootContext.mounted) return;
-                  ScaffoldMessenger.of(rootContext).showSnackBar(
-                    SnackBar(
-                      content: const Text('Moved to trash'),
-                      action: SnackBarAction(
-                        label: 'Undo',
-                        onPressed: () {
-                          ref.read(notesProvider).restore(note);
-                        },
-                      ),
-                    ),
-                  );
                 },
               ),
             ],

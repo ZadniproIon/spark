@@ -35,13 +35,6 @@ class AppTheme {
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
         titleTextStyle: AppTextStyles.title,
       ),
-      snackBarTheme: SnackBarThemeData(
-        backgroundColor: AppColors.textPrimary,
-        contentTextStyle: AppTextStyles.secondary.copyWith(
-          color: Colors.white,
-        ),
-        actionTextColor: AppColors.flame,
-      ),
     );
   }
 }

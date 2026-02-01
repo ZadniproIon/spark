@@ -5,7 +5,6 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../models/note.dart';
 import '../providers/notes_provider.dart';
 import '../theme/colors.dart';
-import '../theme/shadows.dart';
 import '../theme/text_styles.dart';
 import '../widgets/icon_button.dart';
 
@@ -57,7 +56,7 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
                   SparkIconButton(
                     icon: LucideIcons.x,
                     onPressed: () => Navigator.of(context).pop(),
-                    showShadow: true,
+                    isCircular: true,
                     borderColor: AppColors.border,
                     backgroundColor: AppColors.bgCard,
                   ),
@@ -65,7 +64,7 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
                   SparkIconButton(
                     icon: LucideIcons.check,
                     onPressed: _save,
-                    showShadow: true,
+                    isCircular: true,
                     borderColor: AppColors.border,
                     backgroundColor: AppColors.bgCard,
                   ),
@@ -78,7 +77,6 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
                   color: AppColors.bgCard,
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(color: AppColors.border),
-                  boxShadow: const [AppShadows.shadow1],
                 ),
                 child: TextField(
                   controller: _controller,

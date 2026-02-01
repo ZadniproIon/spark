@@ -2,7 +2,6 @@
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../theme/colors.dart';
-import '../theme/shadows.dart';
 import '../theme/text_styles.dart';
 
 class SparkSearchBar extends StatelessWidget {
@@ -25,7 +24,6 @@ class SparkSearchBar extends StatelessWidget {
         color: AppColors.bgCard,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.border),
-        boxShadow: const [AppShadows.shadow1],
       ),
       child: Row(
         children: [

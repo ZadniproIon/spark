@@ -43,7 +43,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   SparkIconButton(
                     icon: LucideIcons.arrowLeft,
                     onPressed: () => Navigator.of(context).pop(),
-                    showShadow: true,
+                    isCircular: true,
                     borderColor: AppColors.border,
                     backgroundColor: AppColors.bgCard,
                   ),

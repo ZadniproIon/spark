@@ -34,7 +34,7 @@ class NotesScreen extends ConsumerWidget {
                   SparkIconButton(
                     icon: LucideIcons.arrowLeft,
                     onPressed: onBack,
-                    showShadow: true,
+                    isCircular: true,
                     borderColor: AppColors.border,
                     backgroundColor: AppColors.bgCard,
                   ),
@@ -48,7 +48,7 @@ class NotesScreen extends ConsumerWidget {
                         ),
                       );
                     },
-                    showShadow: true,
+                    isCircular: true,
                     borderColor: AppColors.border,
                     backgroundColor: AppColors.bgCard,
                   ),

@@ -5,7 +5,6 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../models/note.dart';
 import '../providers/notes_provider.dart';
 import '../theme/colors.dart';
-import '../theme/shadows.dart';
 import '../theme/text_styles.dart';
 import '../utils/note_utils.dart';
 import '../widgets/icon_button.dart';
@@ -30,7 +29,7 @@ class RecycleBinScreen extends ConsumerWidget {
                   SparkIconButton(
                     icon: LucideIcons.arrowLeft,
                     onPressed: () => Navigator.of(context).pop(),
-                    showShadow: true,
+                    isCircular: true,
                     borderColor: AppColors.border,
                     backgroundColor: AppColors.bgCard,
                   ),
@@ -80,7 +79,6 @@ class _RecycleNoteCard extends ConsumerWidget {
         color: AppColors.bgCard,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.border),
-        boxShadow: const [AppShadows.shadow1],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

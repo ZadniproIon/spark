@@ -4,7 +4,6 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../models/note.dart';
 import '../theme/colors.dart';
-import '../theme/shadows.dart';
 import '../theme/text_styles.dart';
 import '../utils/note_utils.dart';
 import 'context_menu.dart';
@@ -27,7 +26,6 @@ class NoteCard extends ConsumerWidget {
         color: AppColors.bgCard,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.border),
-        boxShadow: const [AppShadows.shadow1],
       ),
       child: Material(
         color: Colors.transparent,
