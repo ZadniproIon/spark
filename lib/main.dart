@@ -1,5 +1,28 @@
 import 'package:flutter/material.dart';
 
+class AppColors {
+  static const Color bg = Color(0xFFFAFAFA);
+  static const Color bgCard = Color(0xFFFFFFFF);
+  static const Color border = Color(0xFFE5E7EB);
+  static const Color textPrimary = Color(0xFF1F2937);
+  static const Color textSecondary = Color(0xFF6B7280);
+  static const Color red = Color(0xFFE11D48);
+  static const Color flame = Color(0xFFF97316);
+}
+
+class AppShadows {
+  static const BoxShadow soft = BoxShadow(
+    offset: Offset(0, 4),
+    blurRadius: 32,
+    color: Color.fromRGBO(128, 128, 128, 0.05),
+  );
+  static const BoxShadow strong = BoxShadow(
+    offset: Offset(0, 4),
+    blurRadius: 32,
+    color: Color.fromRGBO(128, 128, 128, 0.15),
+  );
+}
+
 void main() {
   runApp(const MyApp());
 }
@@ -10,25 +33,34 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    final base = ThemeData.light();
     return MaterialApp(
       title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+      theme: base.copyWith(
+        scaffoldBackgroundColor: AppColors.bg,
+        cardColor: AppColors.bgCard,
+        dividerColor: AppColors.border,
+        colorScheme: base.colorScheme.copyWith(
+          primary: AppColors.flame,
+          secondary: AppColors.red,
+          surface: AppColors.bgCard,
+          background: AppColors.bg,
+          onPrimary: Colors.white,
+          onSecondary: Colors.white,
+          onSurface: AppColors.textPrimary,
+          onBackground: AppColors.textPrimary,
+        ),
+        textTheme: base.textTheme.copyWith(
+          bodyLarge: base.textTheme.bodyLarge?.copyWith(
+            color: AppColors.textPrimary,
+          ),
+          bodyMedium: base.textTheme.bodyMedium?.copyWith(
+            color: AppColors.textPrimary,
+          ),
+          bodySmall: base.textTheme.bodySmall?.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
       ),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
