@@ -1,11 +1,13 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
+import '../widgets/auth_sheet.dart';
 import 'recycle_bin_screen.dart';
 
 class MenuScreen extends ConsumerWidget {
@@ -25,10 +27,19 @@ class MenuScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.sparkColors;
     final themePreference = ref.watch(themeProvider);
+    final authState = ref.watch(authStateProvider);
+    final user = authState.valueOrNull;
+    final isGuest = user == null || user.isAnonymous;
+
+    final accountTitle = isGuest ? 'Guest mode' : 'Signed in';
+    final accountSubtitle = isGuest
+        ? 'Sign in to sync across devices.'
+        : (user.email ?? 'Google account');
 
     return Scaffold(
       backgroundColor: colors.bg,
-      body: SafeArea(bottom: false,
+      body: SafeArea(
+        bottom: false,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: ListView(
@@ -136,27 +147,64 @@ class MenuScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              _MenuItem(
-                icon: LucideIcons.atSign,
-                label: 'Change email',
-                onTap: () {},
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: colors.bgCard,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: colors.border),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      accountTitle,
+                      style: AppTextStyles.primary.copyWith(
+                        color: colors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      accountSubtitle,
+                      style: AppTextStyles.secondary.copyWith(
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              _MenuItem(
-                icon: LucideIcons.lock,
-                label: 'Change password',
-                onTap: () {},
-              ),
-              _MenuItem(
-                icon: LucideIcons.logOut,
-                label: 'Log out',
-                onTap: () {},
-              ),
-              _MenuItem(
-                icon: LucideIcons.userX,
-                label: 'Delete account',
-                isDestructive: true,
-                onTap: () {},
-              ),
+              const SizedBox(height: 12),
+              if (isGuest) ...[
+                _MenuItem(
+                  icon: LucideIcons.logIn,
+                  label: 'Sign in or create account',
+                  onTap: () => showAuthSheet(context),
+                ),
+              ] else ...[
+                _MenuItem(
+                  icon: LucideIcons.atSign,
+                  label: 'Change email',
+                  onTap: () {},
+                ),
+                _MenuItem(
+                  icon: LucideIcons.lock,
+                  label: 'Change password',
+                  onTap: () {},
+                ),
+                _MenuItem(
+                  icon: LucideIcons.logOut,
+                  label: 'Log out',
+                  onTap: () {
+                    ref.read(authControllerProvider).signOutToGuest();
+                  },
+                ),
+                _MenuItem(
+                  icon: LucideIcons.userX,
+                  label: 'Delete account',
+                  isDestructive: true,
+                  onTap: () {},
+                ),
+              ],
             ],
           ),
         ),
@@ -250,11 +298,12 @@ class _MenuItem extends StatelessWidget {
           label,
           style: AppTextStyles.primary.copyWith(color: color),
         ),
-        trailing: trailing ?? Icon(
-          LucideIcons.chevronRight,
-          size: 18,
-          color: colors.textSecondary,
-        ),
+        trailing: trailing ??
+            Icon(
+              LucideIcons.chevronRight,
+              size: 18,
+              color: colors.textSecondary,
+            ),
       ),
     );
   }

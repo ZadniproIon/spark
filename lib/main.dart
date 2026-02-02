@@ -1,17 +1,23 @@
-﻿import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+import 'firebase_options.dart';
 import 'models/note.dart';
-import 'screens/edit_note_screen.dart';
-import 'screens/menu_screen.dart';
-import 'screens/main_screen.dart';
-import 'screens/notes_screen.dart';
+import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
+import 'screens/edit_note_screen.dart';
+import 'screens/main_screen.dart';
+import 'screens/menu_screen.dart';
+import 'screens/notes_screen.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   await Hive.initFlutter();
   if (!Hive.isAdapterRegistered(1)) {
     Hive.registerAdapter(NoteAdapter());
@@ -46,16 +52,28 @@ class SparkApp extends ConsumerWidget {
   }
 }
 
-class HomeShell extends StatefulWidget {
+class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
 
   @override
-  State<HomeShell> createState() => _HomeShellState();
+  ConsumerState<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell> {
+class _HomeShellState extends ConsumerState<HomeShell> {
   final PageController _controller = PageController(initialPage: 1);
   int _pageIndex = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.microtask(() async {
+      try {
+        await ref.read(authControllerProvider).ensureGuest();
+      } catch (error) {
+        debugPrint('Guest sign-in failed: $error');
+      }
+    });
+  }
 
   void _openMain() {
     _controller.animateToPage(

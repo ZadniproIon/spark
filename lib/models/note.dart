@@ -25,6 +25,71 @@ class Note {
   final bool isTrashed;
   final DateTime? trashedAt;
 
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'type': type.name,
+      'content': content,
+      'audioPath': audioPath,
+      'createdAt': createdAt,
+      'updatedAt': updatedAt,
+      'isPinned': isPinned,
+      'isTrashed': isTrashed,
+      'trashedAt': trashedAt,
+    };
+  }
+
+  static Note fromMap(Map<String, dynamic> map, {String? id}) {
+    NoteType resolvedType = NoteType.text;
+    final rawType = map['type'];
+    if (rawType is String) {
+      resolvedType = NoteType.values.firstWhere(
+        (type) => type.name == rawType,
+        orElse: () => NoteType.text,
+      );
+    } else if (rawType is int &&
+        rawType >= 0 &&
+        rawType < NoteType.values.length) {
+      resolvedType = NoteType.values[rawType];
+    }
+
+    final createdAt = _readDate(map['createdAt']);
+    final updatedAt = _readDate(map['updatedAt'], fallback: createdAt);
+    final trashedAt = _readNullableDate(map['trashedAt']);
+
+    return Note(
+      id: id ?? (map['id'] as String? ?? ''),
+      type: resolvedType,
+      content: map['content'] as String? ?? '',
+      audioPath: map['audioPath'] as String?,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      isPinned: map['isPinned'] as bool? ?? false,
+      isTrashed: map['isTrashed'] as bool? ?? false,
+      trashedAt: trashedAt,
+    );
+  }
+
+  static DateTime _readDate(dynamic value, {DateTime? fallback}) {
+    return _readNullableDate(value) ?? fallback ?? DateTime.now();
+  }
+
+  static DateTime? _readNullableDate(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+    if (value is DateTime) {
+      return value;
+    }
+    if (value is int) {
+      return DateTime.fromMillisecondsSinceEpoch(value);
+    }
+    if (value is String) {
+      return DateTime.tryParse(value);
+    }
+    return null;
+  }
+
   Note copyWith({
     String? id,
     NoteType? type,
