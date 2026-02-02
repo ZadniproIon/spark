@@ -6,6 +6,7 @@ import '../models/note.dart';
 import '../providers/notes_provider.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
+import '../utils/haptics.dart';
 import '../widgets/icon_button.dart';
 
 class EditNoteScreen extends ConsumerStatefulWidget {
@@ -61,6 +62,7 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
                     borderColor: colors.border,
                     backgroundColor: colors.bgCard,
                     iconColor: colors.textPrimary,
+                    haptic: HapticLevel.light,
                   ),
                   const Spacer(),
                   SparkIconButton(
@@ -70,6 +72,7 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
                     borderColor: colors.border,
                     backgroundColor: colors.bgCard,
                     iconColor: colors.textPrimary,
+                    haptic: HapticLevel.medium,
                   ),
                 ],
               ),
@@ -83,6 +86,7 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
                 ),
                 child: TextField(
                   controller: _controller,
+                  textCapitalization: TextCapitalization.sentences,
                   maxLines: null,
                   minLines: 6,
                   decoration: const InputDecoration(

@@ -1,8 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../theme/colors.dart';
+import '../utils/haptics.dart';
 
-class SparkIconButton extends StatelessWidget {
+class SparkIconButton extends ConsumerWidget {
   const SparkIconButton({
     super.key,
     required this.icon,
@@ -14,6 +16,7 @@ class SparkIconButton extends StatelessWidget {
     this.padding = 12,
     this.isCircular = false,
     this.child,
+    this.haptic = HapticLevel.light,
   });
 
   final IconData icon;
@@ -25,9 +28,10 @@ class SparkIconButton extends StatelessWidget {
   final double padding;
   final bool isCircular;
   final Widget? child;
+  final HapticLevel haptic;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.sparkColors;
     final radius = BorderRadius.circular(isCircular ? 999 : 14);
     return Container(
@@ -43,7 +47,10 @@ class SparkIconButton extends StatelessWidget {
           customBorder: isCircular
               ? const CircleBorder()
               : RoundedRectangleBorder(borderRadius: radius),
-          onTap: onPressed,
+          onTap: () {
+            triggerHaptic(ref, haptic);
+            onPressed();
+          },
           child: Padding(
             padding: EdgeInsets.all(padding),
             child: child ??

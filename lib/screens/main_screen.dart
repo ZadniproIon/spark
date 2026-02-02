@@ -6,6 +6,7 @@ import '../data/audio_recorder.dart';
 import '../providers/notes_provider.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
+import '../utils/haptics.dart';
 import '../widgets/icon_button.dart';
 
 class MainScreen extends ConsumerStatefulWidget {
@@ -125,6 +126,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                           controller: _controller,
                           focusNode: _focusNode,
                           keyboardType: TextInputType.multiline,
+                          textCapitalization: TextCapitalization.sentences,
                           textInputAction: TextInputAction.newline,
                           minLines: 1,
                           maxLines: null,
@@ -178,6 +180,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                         borderColor: colors.border,
                         iconColor: colors.textPrimary,
                         padding: 12,
+                        haptic:
+                            _hasText ? HapticLevel.medium : HapticLevel.light,
                         child: _hasText
                             ? SvgPicture.asset(
                                 'assets/icons/send-horizontal.svg',
@@ -320,6 +324,7 @@ class _VoiceRecorderSheetState extends ConsumerState<_VoiceRecorderSheet> {
                   borderColor: colors.border,
                   backgroundColor: colors.bgCard,
                   iconColor: colors.textPrimary,
+                  haptic: HapticLevel.light,
                 ),
                 const Spacer(),
                 SparkIconButton(
@@ -329,6 +334,7 @@ class _VoiceRecorderSheetState extends ConsumerState<_VoiceRecorderSheet> {
                   borderColor: colors.border,
                   backgroundColor: colors.bgCard,
                   iconColor: colors.textPrimary,
+                  haptic: HapticLevel.medium,
                 ),
               ],
             ),
@@ -363,6 +369,7 @@ class _VoiceRecorderSheetState extends ConsumerState<_VoiceRecorderSheet> {
                 iconColor: colors.textPrimary,
                 padding: 18,
                 size: 28,
+                haptic: HapticLevel.light,
               ),
             ),
             const SizedBox(height: 16),

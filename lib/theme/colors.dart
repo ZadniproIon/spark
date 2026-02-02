@@ -43,7 +43,7 @@ class SparkColors extends ThemeExtension<SparkColors> {
   static const SparkColors dark = SparkColors(
     bg: Color(0xFF0F1115),
     bgCard: Color(0xFF161A22),
-    border: Color(0xFF2A3342),
+    border: Color(0xFF202532),
     textPrimary: Color(0xFFF2F4F7),
     textSecondary: Color(0xFF98A2B3),
     red: AppColors.red,

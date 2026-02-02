@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../models/note.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
+import '../utils/haptics.dart';
 import '../utils/note_utils.dart';
 import 'context_menu.dart';
 import 'voice_player_sheet.dart';
@@ -33,9 +34,13 @@ class NoteCard extends ConsumerWidget {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onLongPress: () => showNoteContextMenu(context, ref, note),
+          onLongPress: () {
+            triggerHapticFromContext(context, HapticLevel.medium);
+            showNoteContextMenu(context, ref, note);
+          },
           onTap: note.type == NoteType.voice && audioSource != null
               ? () {
+                  triggerHapticFromContext(context, HapticLevel.light);
                   showModalBottomSheet<void>(
                     context: context,
                     isScrollControlled: true,

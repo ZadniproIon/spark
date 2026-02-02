@@ -5,6 +5,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../providers/auth_provider.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
+import '../utils/haptics.dart';
 import 'icon_button.dart';
 
 Future<void> showAuthSheet(BuildContext context) async {
@@ -116,6 +117,7 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
                   borderColor: colors.border,
                   backgroundColor: colors.bgCard,
                   iconColor: colors.textPrimary,
+                  haptic: HapticLevel.light,
                 ),
                 const Spacer(),
                 Text(
@@ -158,6 +160,7 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
                     onTap: _isLoading
                         ? null
                         : () => _handleEmailAuth(isSignIn: true),
+                    haptic: HapticLevel.medium,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -167,6 +170,7 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
                     onTap: _isLoading
                         ? null
                         : () => _handleEmailAuth(isSignIn: false),
+                    haptic: HapticLevel.medium,
                   ),
                 ),
               ],
@@ -176,6 +180,7 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
               icon: LucideIcons.globe,
               label: 'Continue with Google',
               onTap: _isLoading ? null : _handleGoogle,
+              haptic: HapticLevel.medium,
             ),
             if (_isLoading) ...[
               const SizedBox(height: 12),
@@ -247,17 +252,24 @@ class _AuthActionButton extends StatelessWidget {
     required this.label,
     this.icon,
     this.onTap,
+    this.haptic = HapticLevel.light,
   });
 
   final String label;
   final IconData? icon;
   final VoidCallback? onTap;
+  final HapticLevel haptic;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.sparkColors;
     return GestureDetector(
-      onTap: onTap,
+      onTap: onTap == null
+          ? null
+          : () {
+              triggerHapticFromContext(context, haptic);
+              onTap?.call();
+            },
       child: AnimatedOpacity(
         opacity: onTap == null ? 0.6 : 1,
         duration: const Duration(milliseconds: 150),
@@ -268,9 +280,9 @@ class _AuthActionButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: colors.border),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
               if (icon != null) ...[
                 Icon(icon, size: 18, color: colors.textPrimary),
                 const SizedBox(width: 8),

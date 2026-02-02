@@ -8,6 +8,7 @@ import '../models/note.dart';
 import '../providers/notes_provider.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
+import '../utils/haptics.dart';
 import '../utils/note_utils.dart';
 
 Future<void> showNoteContextMenu(
@@ -24,7 +25,8 @@ Future<void> showNoteContextMenu(
     isScrollControlled: true,
     builder: (sheetContext) {
       final colors = sheetContext.sparkColors;
-      return SafeArea(bottom: false,
+      return SafeArea(
+        bottom: false,
         child: Container(
           margin: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -32,38 +34,46 @@ Future<void> showNoteContextMenu(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: colors.border),
           ),
+          clipBehavior: Clip.antiAlias,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _MenuItem(
-                icon: note.isPinned ? LucideIcons.pinOff : LucideIcons.pin,
-                label: note.isPinned ? 'Unpin' : 'Pin',
-                onTap: () async {
-                  Navigator.of(sheetContext).pop();
-                  await ref.read(notesProvider).togglePin(note);
-                },
-              ),
-              _MenuItem(
-                icon: LucideIcons.edit,
-                label: 'Edit',
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  Navigator.of(rootContext).pushNamed('/edit', arguments: note);
-                },
-              ),
-              _MenuItem(
-                icon: LucideIcons.copy,
-                label: 'Copy',
-                onTap: () async {
-                  Navigator.of(sheetContext).pop();
-                  await Clipboard.setData(ClipboardData(text: note.content));
-                },
-              ),
+                _MenuItem(
+                  icon: note.isPinned ? LucideIcons.pinOff : LucideIcons.pin,
+                  label: note.isPinned ? 'Unpin' : 'Pin',
+                  onTap: () async {
+                    triggerHapticFromContext(
+                      sheetContext,
+                      note.isPinned ? HapticLevel.light : HapticLevel.medium,
+                    );
+                    Navigator.of(sheetContext).pop();
+                    await ref.read(notesProvider).togglePin(note);
+                  },
+                ),
+                _MenuItem(
+                  icon: LucideIcons.edit,
+                  label: 'Edit',
+                  onTap: () {
+                    triggerHapticFromContext(sheetContext, HapticLevel.light);
+                    Navigator.of(sheetContext).pop();
+                    Navigator.of(rootContext).pushNamed('/edit', arguments: note);
+                  },
+                ),
+                _MenuItem(
+                  icon: LucideIcons.copy,
+                  label: 'Copy',
+                  onTap: () async {
+                    triggerHapticFromContext(sheetContext, HapticLevel.selection);
+                    Navigator.of(sheetContext).pop();
+                    await Clipboard.setData(ClipboardData(text: note.content));
+                  },
+                ),
               if (url != null) ...[
                 _MenuItem(
                   icon: LucideIcons.link,
                   label: 'Copy link',
                   onTap: () async {
+                    triggerHapticFromContext(sheetContext, HapticLevel.selection);
                     Navigator.of(sheetContext).pop();
                     await Clipboard.setData(ClipboardData(text: url));
                   },
@@ -72,6 +82,7 @@ Future<void> showNoteContextMenu(
                   icon: LucideIcons.externalLink,
                   label: 'Open link',
                   onTap: () async {
+                    triggerHapticFromContext(sheetContext, HapticLevel.light);
                     Navigator.of(sheetContext).pop();
                     final uri = Uri.parse(url);
                     await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -84,6 +95,7 @@ Future<void> showNoteContextMenu(
                 isDestructive: true,
                 showDivider: false,
                 onTap: () async {
+                  triggerHapticFromContext(sheetContext, HapticLevel.heavy);
                   Navigator.of(sheetContext).pop();
                   await ref.read(notesProvider).moveToTrash(note);
                 },
@@ -118,19 +130,22 @@ class _MenuItem extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                Icon(icon, size: 20, color: color),
-                const SizedBox(width: 12),
-                Text(
-                  label,
-                  style: AppTextStyles.primary.copyWith(color: color),
-                ),
-              ],
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Icon(icon, size: 20, color: color),
+                  const SizedBox(width: 12),
+                  Text(
+                    label,
+                    style: AppTextStyles.primary.copyWith(color: color),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

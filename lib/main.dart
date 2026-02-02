@@ -8,6 +8,7 @@ import 'data/supabase_config.dart';
 import 'firebase_options.dart';
 import 'models/note.dart';
 import 'providers/auth_provider.dart';
+import 'utils/haptics.dart';
 import 'providers/theme_provider.dart';
 import 'screens/edit_note_screen.dart';
 import 'screens/main_screen.dart';
@@ -104,23 +105,21 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           _openMain();
         }
       },
-      child: GestureDetector(
-        onPanDown: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-        child: ColoredBox(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          child: PageView(
-            controller: _controller,
+      child: ColoredBox(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: PageView(
+          controller: _controller,
             physics: const BouncingScrollPhysics(),
             onPageChanged: (index) {
               FocusManager.instance.primaryFocus?.unfocus();
               setState(() => _pageIndex = index);
+              triggerHapticFromContext(context, HapticLevel.selection);
             },
-            children: [
-              MenuScreen(onBack: _openMain),
-              const MainScreen(),
-              const NotesScreen(),
-            ],
-          ),
+          children: [
+            MenuScreen(onBack: _openMain),
+            const MainScreen(),
+            const NotesScreen(),
+          ],
         ),
       ),
     );

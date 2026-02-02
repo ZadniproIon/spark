@@ -6,6 +6,7 @@ import '../models/note.dart';
 import '../providers/notes_provider.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
+import '../utils/haptics.dart';
 import '../utils/note_utils.dart';
 import '../widgets/icon_button.dart';
 
@@ -34,6 +35,7 @@ class RecycleBinScreen extends ConsumerWidget {
                     borderColor: colors.border,
                     backgroundColor: colors.bgCard,
                     iconColor: colors.textPrimary,
+                    haptic: HapticLevel.light,
                   ),
                   const Spacer(),
                   Text(
@@ -109,7 +111,10 @@ class _RecycleNoteCard extends ConsumerWidget {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => ref.read(notesProvider).restore(note),
+                  onPressed: () {
+                    triggerHaptic(ref, HapticLevel.light);
+                    ref.read(notesProvider).restore(note);
+                  },
                   icon: const Icon(LucideIcons.undo2, size: 16),
                   label: const Text('Restore'),
                   style: OutlinedButton.styleFrom(
@@ -123,7 +128,10 @@ class _RecycleNoteCard extends ConsumerWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => ref.read(notesProvider).deleteForever(note),
+                  onPressed: () {
+                    triggerHaptic(ref, HapticLevel.heavy);
+                    ref.read(notesProvider).deleteForever(note);
+                  },
                   icon: const Icon(LucideIcons.trash2, size: 16),
                   label: const Text('Delete'),
                   style: OutlinedButton.styleFrom(

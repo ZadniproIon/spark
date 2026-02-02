@@ -4,6 +4,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
+import '../utils/haptics.dart';
 import 'icon_button.dart';
 
 class VoicePlayerSheet extends StatefulWidget {
@@ -112,6 +113,7 @@ class _VoicePlayerSheetState extends State<VoicePlayerSheet> {
                   borderColor: colors.border,
                   backgroundColor: colors.bgCard,
                   iconColor: colors.textPrimary,
+                  haptic: HapticLevel.light,
                 ),
                 const Spacer(),
               ],
@@ -141,6 +143,7 @@ class _VoicePlayerSheetState extends State<VoicePlayerSheet> {
                   borderColor: colors.border,
                   backgroundColor: colors.bgCard,
                   iconColor: colors.textPrimary,
+                  haptic: HapticLevel.selection,
                 ),
                 const SizedBox(width: 12),
                 SparkIconButton(
@@ -152,6 +155,7 @@ class _VoicePlayerSheetState extends State<VoicePlayerSheet> {
                   iconColor: colors.textPrimary,
                   padding: 16,
                   size: 28,
+                  haptic: HapticLevel.light,
                 ),
                 const SizedBox(width: 12),
                 SparkIconButton(
@@ -161,6 +165,7 @@ class _VoicePlayerSheetState extends State<VoicePlayerSheet> {
                   borderColor: colors.border,
                   backgroundColor: colors.bgCard,
                   iconColor: colors.textPrimary,
+                  haptic: HapticLevel.selection,
                 ),
               ],
             ),

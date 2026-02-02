@@ -6,6 +6,7 @@ import '../models/note.dart';
 import '../providers/notes_provider.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
+import '../utils/haptics.dart';
 import '../widgets/icon_button.dart';
 import '../widgets/note_card.dart';
 
@@ -188,6 +189,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
                               focusNode: _focusNode,
                               onChanged: _updateQuery,
                               textInputAction: TextInputAction.search,
+                              textCapitalization: TextCapitalization.none,
                               decoration: InputDecoration(
                                 hintText: 'Search...',
                                 hintStyle: AppTextStyles.secondary.copyWith(
@@ -231,6 +233,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
                               borderColor: colors.border,
                               backgroundColor: colors.bgCard,
                               iconColor: colors.textPrimary,
+                              haptic: HapticLevel.selection,
                             ),
                           ),
                   ),

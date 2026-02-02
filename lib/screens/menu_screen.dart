@@ -4,9 +4,11 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../providers/auth_provider.dart';
+import '../providers/haptics_provider.dart';
 import '../providers/theme_provider.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
+import '../utils/haptics.dart';
 import '../widgets/auth_sheet.dart';
 import 'recycle_bin_screen.dart';
 
@@ -27,6 +29,7 @@ class MenuScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.sparkColors;
     final themePreference = ref.watch(themeProvider);
+    final hapticsEnabled = ref.watch(hapticsProvider);
     final authState = ref.watch(authStateProvider);
     final user = authState.valueOrNull;
     final isGuest = user == null || user.isAnonymous;
@@ -100,9 +103,25 @@ class MenuScreen extends ConsumerWidget {
                 ),
               ),
               _MenuItem(
+                icon: LucideIcons.vibrate,
+                label: 'Haptics',
+                trailing: Switch.adaptive(
+                  value: hapticsEnabled,
+                  onChanged: (value) {
+                    triggerHaptic(ref, HapticLevel.selection);
+                    ref.read(hapticsProvider.notifier).setEnabled(value);
+                  },
+                ),
+                onTap: () {
+                  triggerHaptic(ref, HapticLevel.selection);
+                  ref.read(hapticsProvider.notifier).setEnabled(!hapticsEnabled);
+                },
+              ),
+              _MenuItem(
                 icon: LucideIcons.trash2,
                 label: 'Recycle bin',
                 onTap: () {
+                  triggerHaptic(ref, HapticLevel.light);
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const RecycleBinScreen()),
                   );
@@ -111,10 +130,13 @@ class MenuScreen extends ConsumerWidget {
               _MenuItem(
                 icon: LucideIcons.github,
                 label: 'GitHub repository',
-                onTap: () => _launchUrl(
-                  context,
-                  'https://github.com/ZadniproIon/spark',
-                ),
+                onTap: () {
+                  triggerHaptic(ref, HapticLevel.light);
+                  _launchUrl(
+                    context,
+                    'https://github.com/ZadniproIon/spark',
+                  );
+                },
               ),
               const SizedBox(height: 24),
               Text(
@@ -127,17 +149,23 @@ class MenuScreen extends ConsumerWidget {
               _MenuItem(
                 icon: LucideIcons.messageCircle,
                 label: 'Send feedback',
-                onTap: () {},
+                onTap: () {
+                  triggerHaptic(ref, HapticLevel.light);
+                },
               ),
               _MenuItem(
                 icon: LucideIcons.bug,
                 label: 'Report bug',
-                onTap: () {},
+                onTap: () {
+                  triggerHaptic(ref, HapticLevel.light);
+                },
               ),
               _MenuItem(
                 icon: LucideIcons.star,
                 label: 'Request a feature',
-                onTap: () {},
+                onTap: () {
+                  triggerHaptic(ref, HapticLevel.light);
+                },
               ),
               const SizedBox(height: 24),
               Text(
@@ -178,23 +206,31 @@ class MenuScreen extends ConsumerWidget {
                 _MenuItem(
                   icon: LucideIcons.logIn,
                   label: 'Sign in or create account',
-                  onTap: () => showAuthSheet(context),
+                  onTap: () {
+                    triggerHaptic(ref, HapticLevel.medium);
+                    showAuthSheet(context);
+                  },
                 ),
               ] else ...[
                 _MenuItem(
                   icon: LucideIcons.atSign,
                   label: 'Change email',
-                  onTap: () {},
+                  onTap: () {
+                    triggerHaptic(ref, HapticLevel.light);
+                  },
                 ),
                 _MenuItem(
                   icon: LucideIcons.lock,
                   label: 'Change password',
-                  onTap: () {},
+                  onTap: () {
+                    triggerHaptic(ref, HapticLevel.light);
+                  },
                 ),
                 _MenuItem(
                   icon: LucideIcons.logOut,
                   label: 'Log out',
                   onTap: () {
+                    triggerHaptic(ref, HapticLevel.light);
                     ref.read(authControllerProvider).signOutToGuest();
                   },
                 ),
@@ -202,7 +238,9 @@ class MenuScreen extends ConsumerWidget {
                   icon: LucideIcons.userX,
                   label: 'Delete account',
                   isDestructive: true,
-                  onTap: () {},
+                  onTap: () {
+                    triggerHaptic(ref, HapticLevel.heavy);
+                  },
                 ),
               ],
             ],
@@ -291,19 +329,23 @@ class _MenuItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: colors.border),
       ),
-      child: ListTile(
-        onTap: onTap,
-        leading: Icon(icon, color: color, size: 18),
-        title: Text(
-          label,
-          style: AppTextStyles.primary.copyWith(color: color),
+      clipBehavior: Clip.antiAlias,
+      child: Material(
+        color: Colors.transparent,
+        child: ListTile(
+          onTap: onTap,
+          leading: Icon(icon, color: color, size: 18),
+          title: Text(
+            label,
+            style: AppTextStyles.primary.copyWith(color: color),
+          ),
+          trailing: trailing ??
+              Icon(
+                LucideIcons.chevronRight,
+                size: 18,
+                color: colors.textSecondary,
+              ),
         ),
-        trailing: trailing ??
-            Icon(
-              LucideIcons.chevronRight,
-              size: 18,
-              color: colors.textSecondary,
-            ),
       ),
     );
   }
