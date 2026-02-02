@@ -55,6 +55,7 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   final PageController _controller = PageController(initialPage: 1);
+  int _pageIndex = 1;
 
   void _openMain() {
     _controller.animateToPage(
@@ -72,14 +73,32 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    return PageView(
-      controller: _controller,
-      physics: const BouncingScrollPhysics(),
-      children: [
-        MenuScreen(onBack: _openMain),
-        const MainScreen(),
-        const NotesScreen(),
-      ],
+    return PopScope(
+      canPop: _pageIndex == 1,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _pageIndex != 1) {
+          _openMain();
+        }
+      },
+      child: GestureDetector(
+        onPanDown: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+        child: ColoredBox(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          child: PageView(
+            controller: _controller,
+            physics: const BouncingScrollPhysics(),
+            onPageChanged: (index) {
+              FocusManager.instance.primaryFocus?.unfocus();
+              setState(() => _pageIndex = index);
+            },
+            children: [
+              MenuScreen(onBack: _openMain),
+              const MainScreen(),
+              const NotesScreen(),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

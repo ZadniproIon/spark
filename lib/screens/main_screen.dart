@@ -21,17 +21,20 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool _hasText = false;
+  bool _hasFocus = false;
 
   @override
   void initState() {
     super.initState();
     _controller.addListener(_handleTextChange);
+    _focusNode.addListener(_handleFocusChange);
   }
 
   @override
   void dispose() {
     _controller.removeListener(_handleTextChange);
     _controller.dispose();
+    _focusNode.removeListener(_handleFocusChange);
     _focusNode.dispose();
     super.dispose();
   }
@@ -40,6 +43,12 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     final hasText = _controller.text.trim().isNotEmpty;
     if (hasText != _hasText) {
       setState(() => _hasText = hasText);
+    }
+  }
+
+  void _handleFocusChange() {
+    if (_hasFocus != _focusNode.hasFocus) {
+      setState(() => _hasFocus = _focusNode.hasFocus);
     }
   }
 
@@ -157,9 +166,13 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                         );
                       },
                       child: SparkIconButton(
-                        key: ValueKey(_hasText),
-                        icon: _hasText ? LucideIcons.send : LucideIcons.mic,
-                        onPressed: _hasText ? _submitText : _openVoiceSheet,
+                        key: ValueKey(_hasText || _hasFocus),
+                        icon: _hasText || _hasFocus
+                            ? LucideIcons.send
+                            : LucideIcons.mic,
+                        onPressed: _hasText
+                            ? _submitText
+                            : (_hasFocus ? _submitText : _openVoiceSheet),
                         isCircular: true,
                         backgroundColor: colors.bgCard,
                         borderColor: colors.border,

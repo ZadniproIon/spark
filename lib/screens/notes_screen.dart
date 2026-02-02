@@ -20,20 +20,31 @@ class NotesScreen extends ConsumerStatefulWidget {
 
 class _NotesScreenState extends ConsumerState<NotesScreen> {
   final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
   final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
   final List<Note> _items = [];
   String _query = '';
+  bool _hasFocus = false;
 
   @override
   void initState() {
     super.initState();
     _items.addAll(ref.read(notesProvider).activeNotes);
+    _focusNode.addListener(_handleFocusChange);
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _focusNode.removeListener(_handleFocusChange);
+    _focusNode.dispose();
     super.dispose();
+  }
+
+  void _handleFocusChange() {
+    if (_hasFocus != _focusNode.hasFocus) {
+      setState(() => _hasFocus = _focusNode.hasFocus);
+    }
   }
 
   void _updateQuery(String value) {
@@ -147,7 +158,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
 
     return Scaffold(
       backgroundColor: colors.bg,
-      body: SafeArea(bottom: false,
+      body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: Column(
@@ -174,6 +185,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
                           Expanded(
                             child: TextField(
                               controller: _controller,
+                              focusNode: _focusNode,
                               onChanged: _updateQuery,
                               textInputAction: TextInputAction.search,
                               decoration: InputDecoration(
@@ -207,7 +219,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
                         child: FadeTransition(opacity: animation, child: child),
                       );
                     },
-                    child: query.isEmpty
+                    child: query.isEmpty && !_hasFocus
                         ? const SizedBox.shrink(key: ValueKey('empty'))
                         : Padding(
                             key: const ValueKey('clear'),
@@ -226,11 +238,15 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
               ),
               const SizedBox(height: 16),
               Expanded(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  switchInCurve: Curves.easeOut,
-                  switchOutCurve: Curves.easeIn,
-                  child: content,
+                child: MediaQuery.removeViewInsets(
+                  context: context,
+                  removeBottom: true,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    switchInCurve: Curves.easeOut,
+                    switchOutCurve: Curves.easeIn,
+                    child: content,
+                  ),
                 ),
               ),
             ],
