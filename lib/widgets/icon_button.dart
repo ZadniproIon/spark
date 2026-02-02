@@ -13,6 +13,7 @@ class SparkIconButton extends StatelessWidget {
     this.borderColor,
     this.padding = 12,
     this.isCircular = false,
+    this.child,
   });
 
   final IconData icon;
@@ -23,6 +24,7 @@ class SparkIconButton extends StatelessWidget {
   final Color? borderColor;
   final double padding;
   final bool isCircular;
+  final Widget? child;
 
   @override
   Widget build(BuildContext context) {
@@ -44,11 +46,12 @@ class SparkIconButton extends StatelessWidget {
           onTap: onPressed,
           child: Padding(
             padding: EdgeInsets.all(padding),
-            child: Icon(
-              icon,
-              size: size,
-              color: iconColor ?? colors.textPrimary,
-            ),
+            child: child ??
+                Icon(
+                  icon,
+                  size: size,
+                  color: iconColor ?? colors.textPrimary,
+                ),
           ),
         ),
       ),

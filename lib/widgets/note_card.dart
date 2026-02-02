@@ -8,6 +8,7 @@ import '../theme/colors.dart';
 import '../theme/text_styles.dart';
 import '../utils/note_utils.dart';
 import 'context_menu.dart';
+import 'voice_player_sheet.dart';
 
 class NoteCard extends ConsumerWidget {
   const NoteCard({
@@ -32,6 +33,18 @@ class NoteCard extends ConsumerWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onLongPress: () => showNoteContextMenu(context, ref, note),
+          onTap: note.type == NoteType.voice && note.audioPath != null
+              ? () {
+                  showModalBottomSheet<void>(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => VoicePlayerSheet(
+                      filePath: note.audioPath!,
+                    ),
+                  );
+                }
+              : null,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -39,6 +52,7 @@ class NoteCard extends ConsumerWidget {
               children: [
                 if (note.type == NoteType.voice)
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Icon(
                         LucideIcons.mic,
@@ -46,10 +60,15 @@ class NoteCard extends ConsumerWidget {
                         color: colors.textSecondary,
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        'Voice note',
-                        style: AppTextStyles.primary.copyWith(
-                          color: colors.textPrimary,
+                      Expanded(
+                        child: Text(
+                          note.content.trim().isEmpty
+                              ? 'Voice note'
+                              : note.content,
+                          style: AppTextStyles.primary.copyWith(
+                            height: 1.2,
+                            color: colors.textPrimary,
+                          ),
                         ),
                       ),
                     ],

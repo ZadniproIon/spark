@@ -111,7 +111,6 @@ class NotesController extends ChangeNotifier {
   Future<void> togglePin(Note note) async {
     final updated = note.copyWith(
       isPinned: !note.isPinned,
-      updatedAt: DateTime.now(),
     );
     await _repository.upsert(updated);
     await load();
@@ -122,7 +121,6 @@ class NotesController extends ChangeNotifier {
       isTrashed: true,
       isPinned: false,
       trashedAt: DateTime.now(),
-      updatedAt: DateTime.now(),
     );
     await _repository.upsert(updated);
     await load();
@@ -132,7 +130,6 @@ class NotesController extends ChangeNotifier {
     final updated = note.copyWith(
       isTrashed: false,
       trashedAt: null,
-      updatedAt: DateTime.now(),
     );
     await _repository.upsert(updated);
     await load();

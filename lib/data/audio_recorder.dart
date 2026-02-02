@@ -29,6 +29,18 @@ class SparkAudioRecorder {
     return _recorder.stop();
   }
 
+  Future<void> pause() async {
+    await _recorder.pause();
+  }
+
+  Future<void> resume() async {
+    await _recorder.resume();
+  }
+
+  Future<void> cancel() async {
+    await _recorder.cancel();
+  }
+
   Future<void> dispose() async {
     await _recorder.dispose();
   }

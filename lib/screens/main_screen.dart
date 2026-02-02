@@ -1,11 +1,12 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import '../data/audio_recorder.dart';
 import '../providers/notes_provider.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
 import '../widgets/icon_button.dart';
-import 'package:lucide_icons/lucide_icons.dart';
-import '../data/audio_recorder.dart';
 
 class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({
@@ -20,14 +21,11 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool _hasText = false;
-  late final SparkAudioRecorder _recorder;
-  bool _isRecording = false;
 
   @override
   void initState() {
     super.initState();
     _controller.addListener(_handleTextChange);
-    _recorder = SparkAudioRecorder();
   }
 
   @override
@@ -35,7 +33,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     _controller.removeListener(_handleTextChange);
     _controller.dispose();
     _focusNode.dispose();
-    _recorder.dispose();
     super.dispose();
   }
 
@@ -43,33 +40,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     final hasText = _controller.text.trim().isNotEmpty;
     if (hasText != _hasText) {
       setState(() => _hasText = hasText);
-    }
-    if (hasText && _isRecording) {
-      _stopRecordingAndSave();
-    }
-  }
-
-  Future<void> _stopRecordingAndSave() async {
-    final path = await _recorder.stop();
-    if (!mounted) return;
-    setState(() => _isRecording = false);
-    if (path != null) {
-      await ref.read(notesProvider).addVoiceNote(path);
-    }
-  }
-
-  Future<void> _toggleRecording() async {
-    if (_isRecording) {
-      await _stopRecordingAndSave();
-      return;
-    }
-
-    final startedPath = await _recorder.start();
-    if (startedPath == null) {
-      return;
-    }
-    if (mounted) {
-      setState(() => _isRecording = true);
     }
   }
 
@@ -81,6 +51,16 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     await ref.read(notesProvider).addTextNote(text);
     _controller.clear();
     _focusNode.unfocus();
+  }
+
+  Future<void> _openVoiceSheet() async {
+    FocusScope.of(context).unfocus();
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _VoiceRecorderSheet(),
+    );
   }
 
   @override
@@ -178,19 +158,24 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                       },
                       child: SparkIconButton(
                         key: ValueKey(_hasText),
-                        icon: _hasText
-                            ? LucideIcons.send
-                            : (_isRecording
-                                ? LucideIcons.micOff
-                                : LucideIcons.mic),
-                        onPressed: _hasText ? _submitText : _toggleRecording,
+                        icon: _hasText ? LucideIcons.send : LucideIcons.mic,
+                        onPressed: _hasText ? _submitText : _openVoiceSheet,
                         isCircular: true,
                         backgroundColor: colors.bgCard,
                         borderColor: colors.border,
-                        iconColor: _isRecording && !_hasText
-                            ? colors.red
-                            : colors.textPrimary,
+                        iconColor: colors.textPrimary,
                         padding: 12,
+                        child: _hasText
+                            ? SvgPicture.asset(
+                                'assets/icons/send-horizontal.svg',
+                                width: 24,
+                                height: 24,
+                                colorFilter: ColorFilter.mode(
+                                  colors.textPrimary,
+                                  BlendMode.srcIn,
+                                ),
+                              )
+                            : null,
                       ),
                     ),
                   ),
@@ -198,6 +183,184 @@ class _MainScreenState extends ConsumerState<MainScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VoiceRecorderSheet extends ConsumerStatefulWidget {
+  const _VoiceRecorderSheet();
+
+  @override
+  ConsumerState<_VoiceRecorderSheet> createState() => _VoiceRecorderSheetState();
+}
+
+class _VoiceRecorderSheetState extends ConsumerState<_VoiceRecorderSheet> {
+  late final SparkAudioRecorder _recorder;
+  final Stopwatch _stopwatch = Stopwatch();
+  Duration _elapsed = Duration.zero;
+  bool _isRecording = false;
+  bool _isPaused = false;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _recorder = SparkAudioRecorder();
+    _startRecording();
+  }
+
+  @override
+  void dispose() {
+    _stopwatch.stop();
+    _recorder.dispose();
+    super.dispose();
+  }
+
+  Future<void> _startRecording() async {
+    final startedPath = await _recorder.start();
+    if (!mounted) return;
+    if (startedPath == null) {
+      Navigator.of(context).pop();
+      return;
+    }
+    setState(() {
+      _isRecording = true;
+      _isPaused = false;
+    });
+    _stopwatch.start();
+    _tick();
+  }
+
+  void _tick() async {
+    while (mounted && _stopwatch.isRunning) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      if (!mounted || !_stopwatch.isRunning) {
+        break;
+      }
+      setState(() => _elapsed = _stopwatch.elapsed);
+    }
+  }
+
+  Future<void> _togglePause() async {
+    if (!_isRecording) return;
+    if (_isPaused) {
+      await _recorder.resume();
+      _stopwatch.start();
+      setState(() => _isPaused = false);
+      _tick();
+    } else {
+      await _recorder.pause();
+      _stopwatch.stop();
+      setState(() => _isPaused = true);
+    }
+  }
+
+  Future<void> _discard() async {
+    await _recorder.cancel();
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  Future<void> _save() async {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
+    final path = await _recorder.stop();
+    if (path != null) {
+      await ref.read(notesProvider).addVoiceNote(path);
+    }
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  String _format(Duration duration) {
+    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+    final millis = (duration.inMilliseconds % 1000).toString().padLeft(3, '0');
+    return '$minutes:$seconds:$millis';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.sparkColors;
+    return SafeArea(
+      bottom: false,
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: colors.bg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border.all(color: colors.border),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                SparkIconButton(
+                  icon: LucideIcons.x,
+                  onPressed: _discard,
+                  isCircular: true,
+                  borderColor: colors.border,
+                  backgroundColor: colors.bgCard,
+                  iconColor: colors.textPrimary,
+                ),
+                const Spacer(),
+                SparkIconButton(
+                  icon: LucideIcons.check,
+                  onPressed: _save,
+                  isCircular: true,
+                  borderColor: colors.border,
+                  backgroundColor: colors.bgCard,
+                  iconColor: colors.textPrimary,
+                ),
+              ],
+            ),
+            const Spacer(),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (child, animation) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              child: Text(
+                _format(_elapsed),
+                key: ValueKey(_elapsed.inMilliseconds ~/ 50),
+                style: AppTextStyles.title.copyWith(
+                  color: colors.textPrimary,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            AnimatedScale(
+              scale: _isRecording ? 1.0 : 0.95,
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              child: SparkIconButton(
+                icon: _isPaused ? LucideIcons.play : LucideIcons.pause,
+                onPressed: _togglePause,
+                isCircular: true,
+                backgroundColor: colors.bgCard,
+                borderColor: colors.border,
+                iconColor: colors.textPrimary,
+                padding: 18,
+                size: 28,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _isPaused ? 'Paused' : 'Recording…',
+              style: AppTextStyles.secondary.copyWith(
+                color: colors.textSecondary,
+              ),
+            ),
+            const Spacer(),
+          ],
         ),
       ),
     );
