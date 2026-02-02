@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
 import '../utils/haptics.dart';
+import '../utils/motion.dart';
 import 'icon_button.dart';
 
 Future<void> showAuthSheet(BuildContext context) async {
@@ -272,7 +273,7 @@ class _AuthActionButton extends StatelessWidget {
             },
       child: AnimatedOpacity(
         opacity: onTap == null ? 0.6 : 1,
-        duration: const Duration(milliseconds: 150),
+        duration: Motion.fast,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(

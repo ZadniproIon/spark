@@ -7,6 +7,7 @@ import '../providers/notes_provider.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
 import '../utils/haptics.dart';
+import '../utils/motion.dart';
 import '../widgets/icon_button.dart';
 import '../widgets/note_card.dart';
 
@@ -74,7 +75,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
         _listKey.currentState!.removeItem(
           i,
           (context, animation) => _buildAnimatedItem(removed, animation),
-          duration: const Duration(milliseconds: 220),
+          duration: Motion.fast,
         );
       }
     }
@@ -86,7 +87,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
         _items.insert(i, note);
         _listKey.currentState!.insertItem(
           i,
-          duration: const Duration(milliseconds: 220),
+          duration: Motion.fast,
         );
       } else {
         _items[currentIndex] = note;
@@ -96,11 +97,11 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
           _listKey.currentState!.removeItem(
             currentIndex,
             (context, animation) => _buildAnimatedItem(moved, animation),
-            duration: const Duration(milliseconds: 180),
+            duration: Motion.fast,
           );
           _listKey.currentState!.insertItem(
             i,
-            duration: const Duration(milliseconds: 180),
+            duration: Motion.fast,
           );
         }
       }
@@ -210,8 +211,8 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
                     ),
                   ),
                   AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 180),
-                    switchInCurve: Curves.easeOut,
+                    duration: Motion.fast,
+                    switchInCurve: Motion.easeOut,
                     switchOutCurve: Curves.easeIn,
                     transitionBuilder: (child, animation) {
                       return SizeTransition(
@@ -245,8 +246,8 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
                   context: context,
                   removeBottom: true,
                   child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    switchInCurve: Curves.easeOut,
+                    duration: Motion.fast,
+                    switchInCurve: Motion.easeOut,
                     switchOutCurve: Curves.easeIn,
                     child: content,
                   ),

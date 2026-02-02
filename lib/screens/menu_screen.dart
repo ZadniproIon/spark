@@ -9,6 +9,7 @@ import '../providers/theme_provider.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
 import '../utils/haptics.dart';
+import '../utils/motion.dart';
 import '../widgets/auth_sheet.dart';
 import 'recycle_bin_screen.dart';
 
@@ -123,7 +124,7 @@ class MenuScreen extends ConsumerWidget {
                 onTap: () {
                   triggerHaptic(ref, HapticLevel.light);
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const RecycleBinScreen()),
+                    Motion.fadeSlideRoute(page: const RecycleBinScreen()),
                   );
                 },
               ),

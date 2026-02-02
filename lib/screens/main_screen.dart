@@ -7,6 +7,7 @@ import '../providers/notes_provider.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
 import '../utils/haptics.dart';
+import '../utils/motion.dart';
 import '../widgets/icon_button.dart';
 
 class MainScreen extends ConsumerStatefulWidget {
@@ -152,8 +153,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                   Padding(
                     padding: const EdgeInsets.only(left: 8),
                     child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 180),
-                      switchInCurve: Curves.easeOut,
+                      duration: Motion.fast,
+                      switchInCurve: Motion.easeOut,
                       switchOutCurve: Curves.easeIn,
                       transitionBuilder: (child, animation) {
                         final slide = Tween<Offset>(
@@ -340,8 +341,8 @@ class _VoiceRecorderSheetState extends ConsumerState<_VoiceRecorderSheet> {
             ),
             const Spacer(),
             AnimatedSwitcher(
-              duration: const Duration(milliseconds: 180),
-              switchInCurve: Curves.easeOut,
+              duration: Motion.fast,
+              switchInCurve: Motion.easeOut,
               switchOutCurve: Curves.easeIn,
               transitionBuilder: (child, animation) {
                 return FadeTransition(opacity: animation, child: child);
@@ -358,8 +359,8 @@ class _VoiceRecorderSheetState extends ConsumerState<_VoiceRecorderSheet> {
             const SizedBox(height: 24),
             AnimatedScale(
               scale: _isRecording ? 1.0 : 0.95,
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOut,
+              duration: Motion.fast,
+              curve: Motion.easeOut,
               child: SparkIconButton(
                 icon: _isPaused ? LucideIcons.play : LucideIcons.pause,
                 onPressed: _togglePause,

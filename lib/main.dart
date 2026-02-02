@@ -9,6 +9,7 @@ import 'firebase_options.dart';
 import 'models/note.dart';
 import 'providers/auth_provider.dart';
 import 'utils/haptics.dart';
+import 'utils/motion.dart';
 import 'providers/theme_provider.dart';
 import 'screens/edit_note_screen.dart';
 import 'screens/main_screen.dart';
@@ -48,8 +49,9 @@ class SparkApp extends ConsumerWidget {
       onGenerateRoute: (settings) {
         if (settings.name == '/edit') {
           final note = settings.arguments as Note;
-          return MaterialPageRoute(
-            builder: (_) => EditNoteScreen(note: note),
+          return Motion.fadeSlideRoute(
+            page: EditNoteScreen(note: note),
+            beginOffset: const Offset(0.0, 0.12),
           );
         }
         return null;
