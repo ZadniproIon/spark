@@ -12,7 +12,20 @@
           "package_name": "com.example.spark"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1057591596440-gkjgso1ddf94rgfpppojdq525e8591th.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.spark",
+            "certificate_hash": "2372d1d00eccbdf7a30d9007797f3ef1b7a058e8"
+          }
+        },
+        {
+          "client_id": "1057591596440-9dlg66pqf299978nmdrni01u8eh8ibk0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDnoOfYgfToqqW3zNfesy70h1NyFeVqtqU"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1057591596440-9dlg66pqf299978nmdrni01u8eh8ibk0.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1057591596440-mqggt04u8edti6vfjgpmrdptt485jkvh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.spark"
+              }
+            }
+          ]
         }
       }
     }
