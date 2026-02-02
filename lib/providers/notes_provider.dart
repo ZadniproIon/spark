@@ -2,10 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../data/note_repository.dart';
 import '../data/remote_note_repository.dart';
+import '../data/supabase_config.dart';
+import '../data/supabase_storage_repository.dart';
 import '../models/note.dart';
 import 'auth_provider.dart';
 
@@ -18,10 +21,18 @@ final remoteNoteRepositoryProvider = Provider<RemoteNoteRepository>((ref) {
   return RemoteNoteRepository(FirebaseFirestore.instance);
 });
 
+final supabaseStorageRepositoryProvider = Provider<SupabaseStorageRepository>((ref) {
+  return SupabaseStorageRepository(
+    Supabase.instance.client,
+    SupabaseConfig.voiceBucket,
+  );
+});
+
 final notesProvider = ChangeNotifierProvider<NotesController>((ref) {
   final repo = ref.watch(noteRepositoryProvider);
   final remoteRepo = ref.watch(remoteNoteRepositoryProvider);
-  final controller = NotesController(repo, remoteRepo);
+  final storageRepo = ref.watch(supabaseStorageRepositoryProvider);
+  final controller = NotesController(repo, remoteRepo, storageRepo);
   controller.load();
   ref.listen<AsyncValue<dynamic>>(
     authStateProvider,
@@ -34,10 +45,11 @@ final notesProvider = ChangeNotifierProvider<NotesController>((ref) {
 });
 
 class NotesController extends ChangeNotifier {
-  NotesController(this._repository, this._remoteRepository);
+  NotesController(this._repository, this._remoteRepository, this._storageRepository);
 
   final NoteRepository _repository;
   final RemoteNoteRepository _remoteRepository;
+  final SupabaseStorageRepository _storageRepository;
   final Uuid _uuid = const Uuid();
 
   List<Note> _notes = [];
@@ -172,7 +184,7 @@ class NotesController extends ChangeNotifier {
 
   Future<void> deleteForever(Note note) async {
     await _repository.delete(note.id);
-    await _deleteRemote(note.id);
+    await _deleteRemote(note);
     await load();
   }
 
@@ -198,15 +210,15 @@ class NotesController extends ChangeNotifier {
           localById[remote.id] = remote;
           changed = true;
         } else if (!_notesEqual(local, remote)) {
-          await _remoteRepository.upsert(_userId!, local);
+          await _pushNoteToRemote(local);
         }
       }
 
       final missingRemote = localById.values
           .where((note) => !remoteIds.contains(note.id))
           .toList();
-      if (missingRemote.isNotEmpty) {
-        await _remoteRepository.upsertMany(_userId!, missingRemote);
+      for (final note in missingRemote) {
+        await _pushNoteToRemote(note);
       }
 
       if (changed) {
@@ -225,20 +237,57 @@ class NotesController extends ChangeNotifier {
       return;
     }
     try {
-      await _remoteRepository.upsert(_userId!, note);
+      final prepared = await _ensureAudioUploaded(note);
+      await _remoteRepository.upsert(_userId!, prepared);
     } catch (error) {
       debugPrint('Remote note update failed: $error');
     }
   }
 
-  Future<void> _deleteRemote(String noteId) async {
+  Future<void> _deleteRemote(Note note) async {
     if (_userId == null) {
       return;
     }
     try {
-      await _remoteRepository.delete(_userId!, noteId);
+      await _remoteRepository.delete(_userId!, note.id);
+      if (note.type == NoteType.voice) {
+        await _storageRepository.deleteNoteAudio(
+          uid: _userId!,
+          noteId: note.id,
+        );
+      }
     } catch (error) {
       debugPrint('Remote delete failed: $error');
+    }
+  }
+
+  Future<Note> _ensureAudioUploaded(Note note) async {
+    if (_userId == null || note.type != NoteType.voice) {
+      return note;
+    }
+    if (note.audioUrl != null && note.audioUrl!.isNotEmpty) {
+      return note;
+    }
+    final localPath = note.audioPath;
+    if (localPath == null || localPath.isEmpty) {
+      return note;
+    }
+
+    try {
+      final url = await _storageRepository.uploadNoteAudio(
+        uid: _userId!,
+        noteId: note.id,
+        localPath: localPath,
+      );
+      if (url == null) {
+        return note;
+      }
+      final updated = note.copyWith(audioUrl: url);
+      await _repository.upsert(updated);
+      return updated;
+    } catch (error) {
+      debugPrint('Supabase upload failed: $error');
+      return note;
     }
   }
 
@@ -246,7 +295,7 @@ class NotesController extends ChangeNotifier {
     return a.id == b.id &&
         a.type == b.type &&
         a.content == b.content &&
-        a.audioPath == b.audioPath &&
+        a.audioUrl == b.audioUrl &&
         a.createdAt == b.createdAt &&
         a.updatedAt == b.updatedAt &&
         a.isPinned == b.isPinned &&

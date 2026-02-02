@@ -1,4 +1,4 @@
-﻿import 'package:audioplayers/audioplayers.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
@@ -9,10 +9,10 @@ import 'icon_button.dart';
 class VoicePlayerSheet extends StatefulWidget {
   const VoicePlayerSheet({
     super.key,
-    required this.filePath,
+    required this.source,
   });
 
-  final String filePath;
+  final String source;
 
   @override
   State<VoicePlayerSheet> createState() => _VoicePlayerSheetState();
@@ -28,7 +28,14 @@ class _VoicePlayerSheetState extends State<VoicePlayerSheet> {
   void initState() {
     super.initState();
     _player = AudioPlayer();
-    _player.setSourceDeviceFile(widget.filePath);
+
+    final isRemote = widget.source.startsWith('http://') ||
+        widget.source.startsWith('https://');
+    if (isRemote) {
+      _player.setSourceUrl(widget.source);
+    } else {
+      _player.setSourceDeviceFile(widget.source);
+    }
 
     _player.onDurationChanged.listen((duration) {
       if (mounted) {

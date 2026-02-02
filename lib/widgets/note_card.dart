@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -21,6 +21,7 @@ class NoteCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.sparkColors;
+    final audioSource = note.audioPath ?? note.audioUrl;
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
@@ -33,14 +34,14 @@ class NoteCard extends ConsumerWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onLongPress: () => showNoteContextMenu(context, ref, note),
-          onTap: note.type == NoteType.voice && note.audioPath != null
+          onTap: note.type == NoteType.voice && audioSource != null
               ? () {
                   showModalBottomSheet<void>(
                     context: context,
                     isScrollControlled: true,
                     backgroundColor: Colors.transparent,
                     builder: (_) => VoicePlayerSheet(
-                      filePath: note.audioPath!,
+                      source: audioSource,
                     ),
                   );
                 }

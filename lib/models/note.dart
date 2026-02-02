@@ -1,4 +1,4 @@
-﻿import 'package:hive/hive.dart';
+import 'package:hive/hive.dart';
 
 enum NoteType { text, voice }
 
@@ -10,6 +10,7 @@ class Note {
     required this.createdAt,
     required this.updatedAt,
     this.audioPath,
+    this.audioUrl,
     this.isPinned = false,
     this.isTrashed = false,
     this.trashedAt,
@@ -19,6 +20,7 @@ class Note {
   final NoteType type;
   final String content;
   final String? audioPath;
+  final String? audioUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isPinned;
@@ -30,7 +32,7 @@ class Note {
       'id': id,
       'type': type.name,
       'content': content,
-      'audioPath': audioPath,
+      'audioUrl': audioUrl,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
       'isPinned': isPinned,
@@ -62,6 +64,7 @@ class Note {
       type: resolvedType,
       content: map['content'] as String? ?? '',
       audioPath: map['audioPath'] as String?,
+      audioUrl: map['audioUrl'] as String?,
       createdAt: createdAt,
       updatedAt: updatedAt,
       isPinned: map['isPinned'] as bool? ?? false,
@@ -95,6 +98,7 @@ class Note {
     NoteType? type,
     String? content,
     String? audioPath,
+    String? audioUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isPinned,
@@ -106,6 +110,7 @@ class Note {
       type: type ?? this.type,
       content: content ?? this.content,
       audioPath: audioPath ?? this.audioPath,
+      audioUrl: audioUrl ?? this.audioUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isPinned: isPinned ?? this.isPinned,
@@ -131,6 +136,7 @@ class NoteAdapter extends TypeAdapter<Note> {
       type: NoteType.values[fields[1] as int],
       content: fields[2] as String,
       audioPath: fields[3] as String?,
+      audioUrl: fields[9] as String?,
       createdAt: DateTime.fromMillisecondsSinceEpoch(fields[4] as int),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(fields[5] as int),
       isPinned: fields[6] as bool,
@@ -144,7 +150,7 @@ class NoteAdapter extends TypeAdapter<Note> {
   @override
   void write(BinaryWriter writer, Note obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(10)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -162,6 +168,8 @@ class NoteAdapter extends TypeAdapter<Note> {
       ..writeByte(7)
       ..write(obj.isTrashed)
       ..writeByte(8)
-      ..write(obj.trashedAt?.millisecondsSinceEpoch);
+      ..write(obj.trashedAt?.millisecondsSinceEpoch)
+      ..writeByte(9)
+      ..write(obj.audioUrl);
   }
 }

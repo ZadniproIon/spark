@@ -13,12 +13,15 @@ class SparkAudioRecorder {
     }
 
     final dir = await getTemporaryDirectory();
-    final path = '${dir.path}/spark_${DateTime.now().millisecondsSinceEpoch}.m4a';
+    final path =
+        '${dir.path}/spark_${DateTime.now().millisecondsSinceEpoch}.m4a';
     await _recorder.start(
       const RecordConfig(
         encoder: AudioEncoder.aacLc,
-        bitRate: 128000,
-        sampleRate: 44100,
+        bitRate:
+            64000, // 64000 seems to be the most optimal, but 32000 is good too, but there is not a noticeable difference
+        sampleRate: 48000,
+        numChannels: 1,
       ),
       path: path,
     );
