@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+
 import '../data/audio_recorder.dart';
 import '../providers/notes_provider.dart';
 import '../theme/colors.dart';
@@ -77,130 +78,163 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = context.sparkColors;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final keyboardVisible = bottomInset > 0;
+
     return Scaffold(
       backgroundColor: colors.bg,
+      resizeToAvoidBottomInset: false,
       body: SafeArea(
         bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          child: Column(
-            children: [
-              const SizedBox(height: 48),
-              const Spacer(),
-              Column(
-                children: [
-                  Text(
-                    'Hello, there 👋',
-                    style: AppTextStyles.primary.copyWith(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: colors.textPrimary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  Text(
-                    'Settings to the left, notes on the right',
-                    style: AppTextStyles.secondary.copyWith(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: colors.textSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-              const Spacer(),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(minHeight: 48),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: colors.bgCard,
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: colors.border),
-                        ),
-                        child: TextField(
-                          controller: _controller,
-                          focusNode: _focusNode,
-                          keyboardType: TextInputType.multiline,
-                          textCapitalization: TextCapitalization.sentences,
-                          textInputAction: TextInputAction.newline,
-                          minLines: 1,
-                          maxLines: null,
-                          textAlignVertical: TextAlignVertical.center,
-                          onSubmitted: (_) => _submitText(),
-                          decoration: InputDecoration(
-                            hintText: 'Type here…',
-                            hintStyle: AppTextStyles.secondary.copyWith(
-                              color: colors.textSecondary,
+        child: Stack(
+          children: [
+            Align(
+              alignment: Alignment.center,
+              child: AnimatedSwitcher(
+                duration: Motion.fast,
+                switchInCurve: Motion.easeOut,
+                switchOutCurve: Curves.easeIn,
+                transitionBuilder: (child, animation) {
+                  final fade =
+                      Tween<double>(begin: 0, end: 1).animate(animation);
+                  final scale = Tween<double>(begin: 0.96, end: 1)
+                      .animate(animation);
+                  return FadeTransition(
+                    opacity: fade,
+                    child: ScaleTransition(scale: scale, child: child),
+                  );
+                },
+                child: keyboardVisible
+                    ? const SizedBox.shrink(key: ValueKey('hidden'))
+                    : Padding(
+                        key: const ValueKey('visible'),
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Hello, there ✌🏻',
+                              style: AppTextStyles.primary.copyWith(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: colors.textPrimary,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                            border: InputBorder.none,
+                            Text(
+                              'Settings to the left, notes to the right',
+                              style: AppTextStyles.secondary.copyWith(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                                color: colors.textSecondary,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: AnimatedPadding(
+                duration: Motion.keyboard,
+                curve: Motion.easeOut,
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  16,
+                  16,
+                  (keyboardVisible ? 16 : 32) + bottomInset,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(minHeight: 48),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
                           ),
-                          style: AppTextStyles.primary.copyWith(
-                            height: 1.2,
-                            color: colors.textPrimary,
+                          decoration: BoxDecoration(
+                            color: colors.bgCard,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: colors.border),
+                          ),
+                          child: TextField(
+                            controller: _controller,
+                            focusNode: _focusNode,
+                            keyboardType: TextInputType.multiline,
+                            textCapitalization: TextCapitalization.sentences,
+                            textInputAction: TextInputAction.newline,
+                            minLines: 1,
+                            maxLines: null,
+                            textAlignVertical: TextAlignVertical.center,
+                            onSubmitted: (_) => _submitText(),
+                            decoration: InputDecoration(
+                              hintText: 'Type here...',
+                              hintStyle: AppTextStyles.secondary.copyWith(
+                                color: colors.textSecondary,
+                              ),
+                              isDense: true,
+                              contentPadding: EdgeInsets.zero,
+                              border: InputBorder.none,
+                            ),
+                            style: AppTextStyles.primary.copyWith(
+                              height: 1.2,
+                              color: colors.textPrimary,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: AnimatedSwitcher(
-                      duration: Motion.fast,
-                      switchInCurve: Motion.easeOut,
-                      switchOutCurve: Curves.easeIn,
-                      transitionBuilder: (child, animation) {
-                        final slide = Tween<Offset>(
-                          begin: const Offset(0.2, 0),
-                          end: Offset.zero,
-                        ).animate(animation);
-                        final fade =
-                            Tween<double>(begin: 0, end: 1).animate(animation);
-                        return SlideTransition(
-                          position: slide,
-                          child: FadeTransition(opacity: fade, child: child),
-                        );
-                      },
-                      child: SparkIconButton(
-                        key: ValueKey(_hasText || _hasFocus),
-                        icon: _hasText || _hasFocus
-                            ? LucideIcons.send
-                            : LucideIcons.mic,
-                        onPressed: _hasText
-                            ? _submitText
-                            : (_hasFocus ? _submitText : _openVoiceSheet),
-                        isCircular: true,
-                        backgroundColor: colors.bgCard,
-                        borderColor: colors.border,
-                        iconColor: colors.textPrimary,
-                        padding: 12,
-                        haptic:
-                            _hasText ? HapticLevel.medium : HapticLevel.light,
-                        child: _hasText
-                            ? SvgPicture.asset(
-                                'assets/icons/send-horizontal.svg',
-                                width: 24,
-                                height: 24,
-                                colorFilter: ColorFilter.mode(
-                                  colors.textPrimary,
-                                  BlendMode.srcIn,
-                                ),
-                              )
-                            : null,
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: AnimatedSwitcher(
+                        duration: Motion.fast,
+                        switchInCurve: Motion.easeOut,
+                        switchOutCurve: Curves.easeIn,
+                        transitionBuilder: (child, animation) {
+                          final fade =
+                              Tween<double>(begin: 0, end: 1).animate(animation);
+                          final scale = Tween<double>(begin: 0.94, end: 1)
+                              .animate(animation);
+                          return FadeTransition(
+                            opacity: fade,
+                            child: ScaleTransition(scale: scale, child: child),
+                          );
+                        },
+                        child: SparkIconButton(
+                          key: ValueKey(_hasText),
+                          icon: LucideIcons.mic,
+                          onPressed: _hasText ? _submitText : _openVoiceSheet,
+                          isCircular: true,
+                          backgroundColor: colors.bgCard,
+                          borderColor: colors.border,
+                          iconColor: colors.textPrimary,
+                          padding: 12,
+                          haptic:
+                              _hasText ? HapticLevel.medium : HapticLevel.light,
+                          child: _hasText
+                              ? SvgPicture.asset(
+                                  'assets/icons/send-horizontal.svg',
+                                  width: 24,
+                                  height: 24,
+                                  colorFilter: ColorFilter.mode(
+                                    colors.textPrimary,
+                                    BlendMode.srcIn,
+                                  ),
+                                )
+                              : null,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -375,7 +409,7 @@ class _VoiceRecorderSheetState extends ConsumerState<_VoiceRecorderSheet> {
             ),
             const SizedBox(height: 16),
             Text(
-              _isPaused ? 'Paused' : 'Recording…',
+              _isPaused ? 'Paused' : 'Recording�',
               style: AppTextStyles.secondary.copyWith(
                 color: colors.textSecondary,
               ),

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 class Motion {
-  static const Duration fast = Duration(milliseconds: 160);
+  static const Duration fast = Duration(milliseconds: 140);
+  static const Duration keyboard = Duration(milliseconds: 100);
   static const Duration normal = Duration(milliseconds: 220);
   static const Duration slow = Duration(milliseconds: 320);
 
