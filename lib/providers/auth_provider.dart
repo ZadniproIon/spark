@@ -80,4 +80,16 @@ class AuthController {
     await _repository.signOut();
     await _repository.ensureGuest();
   }
+
+  Future<void> reauthenticateWithPassword(String email, String password) {
+    return _repository.reauthenticateWithPassword(email, password);
+  }
+
+  Future<void> updateEmail(String email) {
+    return _repository.updateEmail(email);
+  }
+
+  Future<void> updatePassword(String password) {
+    return _repository.updatePassword(password);
+  }
 }
