@@ -192,118 +192,142 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
             children: [
               SizedBox(
                 height: 48,
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final maxWidth = constraints.maxWidth;
-                    final isEmpty = query.isEmpty;
-                    final iconColor = _searchOpen && isEmpty
-                        ? colors.textSecondary
-                        : colors.textPrimary;
-                    return Stack(
-                      alignment: Alignment.centerRight,
-                      children: [
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: AnimatedContainer(
-                            duration: Motion.fast,
-                            curve: Motion.easeOut,
-                            width: _searchOpen ? maxWidth : 48,
-                            height: 48,
-                            decoration: _searchOpen
-                                ? BoxDecoration(
-                                    color: colors.bgCard,
-                                    borderRadius: BorderRadius.circular(999),
-                                    border: Border.all(color: colors.border),
-                                  )
-                                : null,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    IgnorePointer(
+                      ignoring: _searchOpen,
+                      child: AnimatedOpacity(
+                        opacity: _searchOpen ? 0 : 1,
+                        duration: Motion.fast,
+                        curve: Motion.easeOut,
+                        child: Text(
+                          'Your notes',
+                          style: AppTextStyles.section.copyWith(
+                            color: colors.textPrimary,
                           ),
                         ),
-                        Positioned.fill(
-                          child: AnimatedOpacity(
-                            opacity: _searchOpen ? 1 : 0,
-                            duration: Motion.fast,
-                            curve: Motion.easeOut,
-                            child: IgnorePointer(
-                              ignoring: !_searchOpen,
-                              child: Row(
-                                children: [
-                                  const SizedBox(width: 12),
-                                  Icon(
-                                    LucideIcons.search,
-                                    size: 24,
-                                    color: iconColor,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: TextField(
-                                      controller: _controller,
-                                      focusNode: _focusNode,
-                                      onChanged: _updateQuery,
-                                      textInputAction: TextInputAction.search,
-                                      textCapitalization:
-                                          TextCapitalization.none,
-                                      decoration: InputDecoration(
-                                        hintText: 'Search...',
-                                        hintStyle:
-                                            AppTextStyles.secondary.copyWith(
-                                          color: colors.textSecondary,
-                                        ),
-                                        isDense: true,
-                                        contentPadding: EdgeInsets.zero,
-                                        border: InputBorder.none,
-                                      ),
-                                      style: AppTextStyles.primary.copyWith(
-                                        height: 1.2,
-                                        color: colors.textPrimary,
-                                      ),
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () {
-                                      triggerHaptic(
-                                        ref,
-                                        HapticLevel.selection,
-                                      );
-                                      _clearSearch();
-                                    },
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(12),
-                                      child: Icon(
-                                        LucideIcons.x,
+                      ),
+                    ),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final maxWidth = constraints.maxWidth;
+                        final isEmpty = query.isEmpty;
+                        final iconColor = _searchOpen && isEmpty
+                            ? colors.textSecondary
+                            : colors.textPrimary;
+                        return Stack(
+                          alignment: Alignment.centerRight,
+                          children: [
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: AnimatedContainer(
+                                duration: Motion.fast,
+                                curve: Motion.easeOut,
+                                width: _searchOpen ? maxWidth : 48,
+                                height: 48,
+                                decoration: _searchOpen
+                                    ? BoxDecoration(
+                                        color: colors.bgCard,
+                                        borderRadius:
+                                            BorderRadius.circular(999),
+                                        border:
+                                            Border.all(color: colors.border),
+                                      )
+                                    : null,
+                              ),
+                            ),
+                            Positioned.fill(
+                              child: AnimatedOpacity(
+                                opacity: _searchOpen ? 1 : 0,
+                                duration: Motion.fast,
+                                curve: Motion.easeOut,
+                                child: IgnorePointer(
+                                  ignoring: !_searchOpen,
+                                  child: Row(
+                                    children: [
+                                      const SizedBox(width: 12),
+                                      Icon(
+                                        LucideIcons.search,
                                         size: 24,
-                                        color: colors.textPrimary,
+                                        color: iconColor,
                                       ),
-                                    ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: TextField(
+                                          controller: _controller,
+                                          focusNode: _focusNode,
+                                          onChanged: _updateQuery,
+                                          textInputAction:
+                                              TextInputAction.search,
+                                          textCapitalization:
+                                              TextCapitalization.none,
+                                          decoration: InputDecoration(
+                                            hintText: 'Search...',
+                                            hintStyle:
+                                                AppTextStyles.secondary
+                                                    .copyWith(
+                                              color: colors.textSecondary,
+                                            ),
+                                            isDense: true,
+                                            contentPadding: EdgeInsets.zero,
+                                            border: InputBorder.none,
+                                          ),
+                                          style:
+                                              AppTextStyles.primary.copyWith(
+                                            height: 1.2,
+                                            color: colors.textPrimary,
+                                          ),
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        onTap: () {
+                                          triggerHaptic(
+                                            ref,
+                                            HapticLevel.selection,
+                                          );
+                                          _clearSearch();
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: Icon(
+                                            LucideIcons.x,
+                                            size: 24,
+                                            color: colors.textPrimary,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: IgnorePointer(
-                            ignoring: _searchOpen,
-                            child: AnimatedOpacity(
-                              opacity: _searchOpen ? 0 : 1,
-                              duration: Motion.fast,
-                              curve: Motion.easeOut,
-                              child: SparkIconButton(
-                                icon: LucideIcons.search,
-                                onPressed: _openSearch,
-                                isCircular: true,
-                                borderColor: colors.border,
-                                backgroundColor: colors.bgCard,
-                                iconColor: colors.textPrimary,
-                                size: 24,
-                                haptic: HapticLevel.selection,
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: IgnorePointer(
+                                ignoring: _searchOpen,
+                                child: AnimatedOpacity(
+                                  opacity: _searchOpen ? 0 : 1,
+                                  duration: Motion.fast,
+                                  curve: Motion.easeOut,
+                                  child: SparkIconButton(
+                                    icon: LucideIcons.search,
+                                    onPressed: _openSearch,
+                                    isCircular: true,
+                                    borderColor: colors.border,
+                                    backgroundColor: colors.bgCard,
+                                    iconColor: colors.textPrimary,
+                                    size: 24,
+                                    haptic: HapticLevel.selection,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+                          ],
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),
