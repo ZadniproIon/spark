@@ -47,4 +47,8 @@ class SparkAudioRecorder {
   Future<void> dispose() async {
     await _recorder.dispose();
   }
+
+  Future<Amplitude> getAmplitude() async {
+    return _recorder.getAmplitude();
+  }
 }

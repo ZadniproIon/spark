@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../data/audio_recorder.dart';
@@ -252,6 +253,7 @@ class _VoiceRecorderSheetState extends ConsumerState<_VoiceRecorderSheet> {
   late final SparkAudioRecorder _recorder;
   final Stopwatch _stopwatch = Stopwatch();
   Duration _elapsed = Duration.zero;
+  double _level = 0.0;
   bool _isRecording = false;
   bool _isPaused = false;
   bool _isSaving = false;
@@ -291,7 +293,20 @@ class _VoiceRecorderSheetState extends ConsumerState<_VoiceRecorderSheet> {
       if (!mounted || !_stopwatch.isRunning) {
         break;
       }
-      setState(() => _elapsed = _stopwatch.elapsed);
+      double nextLevel = _level;
+      try {
+        final amplitude = await _recorder.getAmplitude();
+        nextLevel = _normalizeAmplitude(amplitude.current);
+      } catch (_) {
+        nextLevel = 0;
+      }
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _elapsed = _stopwatch.elapsed;
+        _level = (_level * 0.7) + (nextLevel * 0.3);
+      });
     }
   }
 
@@ -305,7 +320,10 @@ class _VoiceRecorderSheetState extends ConsumerState<_VoiceRecorderSheet> {
     } else {
       await _recorder.pause();
       _stopwatch.stop();
-      setState(() => _isPaused = true);
+      setState(() {
+        _isPaused = true;
+        _level = 0;
+      });
     }
   }
 
@@ -329,25 +347,40 @@ class _VoiceRecorderSheetState extends ConsumerState<_VoiceRecorderSheet> {
   }
 
   String _format(Duration duration) {
-    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final minutes = duration.inMinutes.toString().padLeft(2, '0');
     final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-    final millis = (duration.inMilliseconds % 1000).toString().padLeft(3, '0');
-    return '$minutes:$seconds:$millis';
+    return '$minutes:$seconds';
+  }
+
+  double _normalizeAmplitude(double db) {
+    const minDb = -60.0;
+    if (db.isNaN) {
+      return 0;
+    }
+    final clamped = db.clamp(minDb, 0.0);
+    return (clamped - minDb) / (0 - minDb);
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.sparkColors;
+    const double modalInset = 28;
+    const double modalRadius = 56;
+    const double controlPadding = 8;
     return SafeArea(
       bottom: false,
       child: Container(
-        height: MediaQuery.of(context).size.height * 0.7,
+        height: MediaQuery.of(context).size.height * 0.6,
         decoration: BoxDecoration(
           color: colors.bg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border.all(color: colors.border),
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(modalRadius),
+          ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        padding: const EdgeInsets.symmetric(
+          horizontal: modalInset,
+          vertical: modalInset,
+        ),
         child: Column(
           children: [
             Row(
@@ -364,7 +397,7 @@ class _VoiceRecorderSheetState extends ConsumerState<_VoiceRecorderSheet> {
                 const Spacer(),
                 SparkIconButton(
                   icon: LucideIcons.check,
-                  onPressed: _save,
+                  onPressed: _isPaused ? _save : null,
                   isCircular: true,
                   borderColor: colors.border,
                   backgroundColor: colors.bgCard,
@@ -374,44 +407,58 @@ class _VoiceRecorderSheetState extends ConsumerState<_VoiceRecorderSheet> {
               ],
             ),
             const Spacer(),
-            AnimatedSwitcher(
-              duration: Motion.fast,
-              switchInCurve: Motion.easeOut,
-              switchOutCurve: Curves.easeIn,
-              transitionBuilder: (child, animation) {
-                return FadeTransition(opacity: animation, child: child);
-              },
-              child: Text(
-                _format(_elapsed),
-                key: ValueKey(_elapsed.inMilliseconds ~/ 50),
-                style: AppTextStyles.title.copyWith(
-                  color: colors.textPrimary,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            AnimatedScale(
-              scale: _isRecording ? 1.0 : 0.95,
-              duration: Motion.fast,
-              curve: Motion.easeOut,
-              child: SparkIconButton(
-                icon: _isPaused ? LucideIcons.play : LucideIcons.pause,
-                onPressed: _togglePause,
-                isCircular: true,
-                backgroundColor: colors.bgCard,
-                borderColor: colors.border,
-                iconColor: colors.textPrimary,
-                padding: 18,
-                size: 28,
-                haptic: HapticLevel.light,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              _isPaused ? 'Paused' : 'Recording�',
-              style: AppTextStyles.secondary.copyWith(
-                color: colors.textSecondary,
+            Container(
+              padding: const EdgeInsets.all(controlPadding),
+              child: Column(
+                children: [
+                  AnimatedSwitcher(
+                    duration: Motion.fast,
+                    switchInCurve: Motion.easeOut,
+                    switchOutCurve: Curves.easeIn,
+                    transitionBuilder: (child, animation) {
+                      return FadeTransition(opacity: animation, child: child);
+                    },
+                    child: Text(
+                      _format(_elapsed),
+                      key: ValueKey(_elapsed.inMilliseconds ~/ 50),
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                        color: colors.textPrimary,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _WaveformMeter(
+                    level: _level,
+                    color: colors.textSecondary,
+                  ),
+                  const SizedBox(height: 16),
+                  AnimatedScale(
+                    scale: _isRecording ? 1.0 : 0.95,
+                    duration: Motion.fast,
+                    curve: Motion.easeOut,
+                    child: SparkIconButton(
+                      icon: _isPaused ? LucideIcons.play : LucideIcons.pause,
+                      onPressed: _togglePause,
+                      isCircular: true,
+                      backgroundColor: colors.bgCard,
+                      borderColor: colors.border,
+                      iconColor: colors.textPrimary,
+                      padding: 18,
+                      size: 28,
+                      haptic: HapticLevel.light,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    _isPaused ? 'Paused' : 'Recording...',
+                    style: AppTextStyles.secondary.copyWith(
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
             ),
             const Spacer(),
@@ -419,5 +466,90 @@ class _VoiceRecorderSheetState extends ConsumerState<_VoiceRecorderSheet> {
         ),
       ),
     );
+  }
+}
+
+class _WaveformMeter extends StatelessWidget {
+  const _WaveformMeter({
+    required this.level,
+    required this.color,
+  });
+
+  final double level;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 72,
+      width: double.infinity,
+      child: CustomPaint(
+        painter: _WaveformPainter(
+          level: level,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+class _WaveformPainter extends CustomPainter {
+  const _WaveformPainter({
+    required this.level,
+    required this.color,
+  });
+
+  final double level;
+  final Color color;
+
+  static const List<double> _pattern = [
+    0.2,
+    0.35,
+    0.5,
+    0.3,
+    0.6,
+    0.4,
+    0.75,
+    0.45,
+    0.7,
+    0.4,
+    0.85,
+    0.5,
+    0.7,
+    0.45,
+    0.8,
+    0.4,
+    0.6,
+    0.35,
+    0.5,
+    0.3,
+    0.4,
+  ];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+    final midY = size.height / 2;
+    final maxAmp = size.height / 2;
+    final clamped = level.clamp(0.0, 1.0);
+    final step = size.width / (_pattern.length - 1);
+
+    for (int i = 0; i < _pattern.length; i++) {
+      final amp = maxAmp * clamped * _pattern[i];
+      final x = step * i;
+      canvas.drawLine(
+        Offset(x, midY - amp),
+        Offset(x, midY + amp),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _WaveformPainter oldDelegate) {
+    return oldDelegate.level != level || oldDelegate.color != color;
   }
 }

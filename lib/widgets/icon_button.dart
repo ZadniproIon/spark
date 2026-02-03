@@ -8,7 +8,7 @@ class SparkIconButton extends ConsumerWidget {
   const SparkIconButton({
     super.key,
     required this.icon,
-    required this.onPressed,
+    this.onPressed,
     this.size = 24,
     this.iconColor,
     this.backgroundColor,
@@ -20,7 +20,7 @@ class SparkIconButton extends ConsumerWidget {
   });
 
   final IconData icon;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final double size;
   final Color? iconColor;
   final Color? backgroundColor;
@@ -34,31 +34,36 @@ class SparkIconButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.sparkColors;
     final radius = BorderRadius.circular(isCircular ? 999 : 14);
-    return Container(
-      decoration: BoxDecoration(
-        color: backgroundColor ?? Colors.transparent,
-        borderRadius: isCircular ? null : radius,
-        shape: isCircular ? BoxShape.circle : BoxShape.rectangle,
-        border: borderColor == null ? null : Border.all(color: borderColor!),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          customBorder: isCircular
-              ? const CircleBorder()
-              : RoundedRectangleBorder(borderRadius: radius),
-          onTap: () {
-            triggerHaptic(ref, haptic);
-            onPressed();
-          },
-          child: Padding(
-            padding: EdgeInsets.all(padding),
-            child: child ??
-                Icon(
-                  icon,
-                  size: size,
-                  color: iconColor ?? colors.textPrimary,
-                ),
+    return Opacity(
+      opacity: onPressed == null ? 0.5 : 1,
+      child: Container(
+        decoration: BoxDecoration(
+          color: backgroundColor ?? Colors.transparent,
+          borderRadius: isCircular ? null : radius,
+          shape: isCircular ? BoxShape.circle : BoxShape.rectangle,
+          border: borderColor == null ? null : Border.all(color: borderColor!),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            customBorder: isCircular
+                ? const CircleBorder()
+                : RoundedRectangleBorder(borderRadius: radius),
+            onTap: onPressed == null
+                ? null
+                : () {
+                    triggerHaptic(ref, haptic);
+                    onPressed?.call();
+                  },
+            child: Padding(
+              padding: EdgeInsets.all(padding),
+              child: child ??
+                  Icon(
+                    icon,
+                    size: size,
+                    color: iconColor ?? colors.textPrimary,
+                  ),
+            ),
           ),
         ),
       ),
