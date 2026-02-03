@@ -4,9 +4,11 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../models/note.dart';
+import '../providers/auth_provider.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
 import '../utils/haptics.dart';
+import '../utils/motion.dart';
 import '../utils/note_utils.dart';
 import 'context_menu.dart';
 import 'voice_player_sheet.dart';
@@ -19,16 +21,71 @@ class NoteCard extends ConsumerWidget {
 
   final Note note;
 
+  List<TextSpan> _buildLinkSpans(
+    String text,
+    TextStyle baseStyle,
+    Color linkColor,
+  ) {
+    final matches = urlRegex.allMatches(text).toList();
+    if (matches.isEmpty) {
+      return [TextSpan(text: text, style: baseStyle)];
+    }
+
+    final spans = <TextSpan>[];
+    int lastIndex = 0;
+    for (final match in matches) {
+      if (match.start > lastIndex) {
+        spans.add(
+          TextSpan(
+            text: text.substring(lastIndex, match.start),
+            style: baseStyle,
+          ),
+        );
+      }
+      final linkText = text.substring(match.start, match.end);
+      spans.add(
+        TextSpan(
+          text: linkText,
+          style: baseStyle.copyWith(
+            color: linkColor,
+            decoration: TextDecoration.underline,
+            decorationColor: linkColor,
+          ),
+        ),
+      );
+      lastIndex = match.end;
+    }
+    if (lastIndex < text.length) {
+      spans.add(
+        TextSpan(
+          text: text.substring(lastIndex),
+          style: baseStyle,
+        ),
+      );
+    }
+    return spans;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.sparkColors;
     final audioSource = note.audioPath ?? note.audioUrl;
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
+    final baseTextStyle = AppTextStyles.primary.copyWith(
+      height: 1.2,
+      color: colors.textPrimary,
+    );
+    final user = ref.watch(authStateProvider).valueOrNull;
+    final showSyncDot = user != null && !user.isAnonymous;
+    return AnimatedContainer(
+      duration: Motion.fast,
+      curve: Motion.easeOut,
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: colors.bgCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colors.border),
+        border: Border.all(
+          color: note.isPinned ? colors.flame : colors.border,
+        ),
       ),
       child: Material(
         color: Colors.transparent,
@@ -62,29 +119,36 @@ class NoteCard extends ConsumerWidget {
                     children: [
                       Icon(
                         LucideIcons.mic,
-                        size: 18,
+                        size: 20,
                         color: colors.textSecondary,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
-                          note.content.trim().isEmpty
-                              ? 'Voice note'
-                              : note.content,
-                          style: AppTextStyles.primary.copyWith(
-                            height: 1.2,
-                            color: colors.textPrimary,
-                          ),
-                        ),
+                        child: note.content.trim().isEmpty
+                            ? Text(
+                                'Voice note',
+                                style: baseTextStyle,
+                              )
+                            : RichText(
+                                text: TextSpan(
+                                  children: _buildLinkSpans(
+                                    note.content,
+                                    baseTextStyle,
+                                    colors.flame,
+                                  ),
+                                ),
+                              ),
                       ),
                     ],
                   )
                 else
-                  Text(
-                    note.content,
-                    style: AppTextStyles.primary.copyWith(
-                      height: 1.2,
-                      color: colors.textPrimary,
+                  RichText(
+                    text: TextSpan(
+                      children: _buildLinkSpans(
+                        note.content,
+                        baseTextStyle,
+                        colors.flame,
+                      ),
                     ),
                   ),
                 const SizedBox(height: 8),
@@ -107,6 +171,16 @@ class NoteCard extends ConsumerWidget {
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
                           color: colors.textSecondary,
+                        ),
+                      ),
+                    if (showSyncDot)
+                      Container(
+                        width: 6,
+                        height: 6,
+                        margin: EdgeInsets.only(left: note.isPinned ? 8 : 0),
+                        decoration: BoxDecoration(
+                          color: note.isSynced ? Colors.green : colors.flame,
+                          shape: BoxShape.circle,
                         ),
                       ),
                   ],

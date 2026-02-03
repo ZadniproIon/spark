@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -121,9 +123,10 @@ class NotesController extends ChangeNotifier {
       content: trimmed,
       createdAt: now,
       updatedAt: now,
+      isSynced: false,
     );
     await _repository.upsert(note);
-    await _pushNoteToRemote(note);
+    unawaited(_pushNoteToRemote(note));
     await load();
   }
 
@@ -136,9 +139,10 @@ class NotesController extends ChangeNotifier {
       audioPath: audioPath,
       createdAt: now,
       updatedAt: now,
+      isSynced: false,
     );
     await _repository.upsert(note);
-    await _pushNoteToRemote(note);
+    unawaited(_pushNoteToRemote(note));
     await load();
   }
 
@@ -146,18 +150,20 @@ class NotesController extends ChangeNotifier {
     final updated = note.copyWith(
       content: content ?? note.content,
       updatedAt: DateTime.now(),
+      isSynced: false,
     );
     await _repository.upsert(updated);
-    await _pushNoteToRemote(updated);
+    unawaited(_pushNoteToRemote(updated));
     await load();
   }
 
   Future<void> togglePin(Note note) async {
     final updated = note.copyWith(
       isPinned: !note.isPinned,
+      isSynced: false,
     );
     await _repository.upsert(updated);
-    await _pushNoteToRemote(updated);
+    unawaited(_pushNoteToRemote(updated));
     await load();
   }
 
@@ -166,9 +172,10 @@ class NotesController extends ChangeNotifier {
       isTrashed: true,
       isPinned: false,
       trashedAt: DateTime.now(),
+      isSynced: false,
     );
     await _repository.upsert(updated);
-    await _pushNoteToRemote(updated);
+    unawaited(_pushNoteToRemote(updated));
     await load();
   }
 
@@ -176,9 +183,10 @@ class NotesController extends ChangeNotifier {
     final updated = note.copyWith(
       isTrashed: false,
       trashedAt: null,
+      isSynced: false,
     );
     await _repository.upsert(updated);
-    await _pushNoteToRemote(updated);
+    unawaited(_pushNoteToRemote(updated));
     await load();
   }
 
@@ -239,6 +247,9 @@ class NotesController extends ChangeNotifier {
     try {
       final prepared = await _ensureAudioUploaded(note);
       await _remoteRepository.upsert(_userId!, prepared);
+      final synced = prepared.copyWith(isSynced: true);
+      await _repository.upsert(synced);
+      _replaceLocalNote(synced);
     } catch (error) {
       debugPrint('Remote note update failed: $error');
     }
@@ -284,11 +295,21 @@ class NotesController extends ChangeNotifier {
       }
       final updated = note.copyWith(audioUrl: url);
       await _repository.upsert(updated);
+      _replaceLocalNote(updated);
       return updated;
     } catch (error) {
       debugPrint('Supabase upload failed: $error');
       return note;
     }
+  }
+
+  void _replaceLocalNote(Note note) {
+    final index = _notes.indexWhere((item) => item.id == note.id);
+    if (index == -1) {
+      return;
+    }
+    _notes[index] = note;
+    notifyListeners();
   }
 
   bool _notesEqual(Note a, Note b) {

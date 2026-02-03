@@ -17,7 +17,7 @@ Future<void> showNoteContextMenu(
   Note note,
 ) async {
   final rootContext = context;
-  final url = extractFirstUrl(note.content);
+  final urls = extractUrls(note.content);
 
   await showModalBottomSheet<void>(
     context: context,
@@ -68,27 +68,7 @@ Future<void> showNoteContextMenu(
                     await Clipboard.setData(ClipboardData(text: note.content));
                   },
                 ),
-              if (url != null) ...[
-                _MenuItem(
-                  icon: LucideIcons.link,
-                  label: 'Copy link',
-                  onTap: () async {
-                    triggerHapticFromContext(sheetContext, HapticLevel.selection);
-                    Navigator.of(sheetContext).pop();
-                    await Clipboard.setData(ClipboardData(text: url));
-                  },
-                ),
-                _MenuItem(
-                  icon: LucideIcons.externalLink,
-                  label: 'Open link',
-                  onTap: () async {
-                    triggerHapticFromContext(sheetContext, HapticLevel.light);
-                    Navigator.of(sheetContext).pop();
-                    final uri = Uri.parse(url);
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  },
-                ),
-              ],
+              if (urls.isNotEmpty) _LinkSection(urls: urls),
               _MenuItem(
                 icon: LucideIcons.trash2,
                 label: 'Move to trash',
@@ -106,6 +86,128 @@ Future<void> showNoteContextMenu(
       );
     },
   );
+}
+
+class _LinkSection extends StatelessWidget {
+  const _LinkSection({
+    required this.urls,
+  });
+
+  final List<String> urls;
+
+  String _labelForUrl(String url) {
+    try {
+      final uri = Uri.parse(url);
+      final host = uri.host.isNotEmpty ? uri.host : url;
+      final path = uri.path;
+      if (path.isEmpty || path == '/') {
+        return host;
+      }
+      final trimmed = path.length > 18 ? '${path.substring(0, 18)}…' : path;
+      return '$host$trimmed';
+    } catch (_) {
+      return url;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.sparkColors;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (int i = 0; i < urls.length; i++) ...[
+          _LinkRow(
+            url: urls[i],
+            label: _labelForUrl(urls[i]),
+          ),
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: colors.border,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _LinkRow extends StatelessWidget {
+  const _LinkRow({
+    required this.url,
+    required this.label,
+  });
+
+  final String url;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.sparkColors;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.secondary.copyWith(
+                color: colors.textSecondary,
+              ),
+            ),
+          ),
+          _LinkAction(
+            icon: LucideIcons.copy,
+            onTap: () async {
+              triggerHapticFromContext(context, HapticLevel.selection);
+              await Clipboard.setData(ClipboardData(text: url));
+            },
+          ),
+          const SizedBox(width: 8),
+          _LinkAction(
+            icon: LucideIcons.externalLink,
+            onTap: () async {
+              triggerHapticFromContext(context, HapticLevel.light);
+              final uri = Uri.parse(url);
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LinkAction extends StatelessWidget {
+  const _LinkAction({
+    required this.icon,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.sparkColors;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Icon(
+            icon,
+            size: 18,
+            color: colors.textPrimary,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _MenuItem extends StatelessWidget {

@@ -14,6 +14,7 @@ class Note {
     this.isPinned = false,
     this.isTrashed = false,
     this.trashedAt,
+    this.isSynced = true,
   });
 
   final String id;
@@ -26,6 +27,7 @@ class Note {
   final bool isPinned;
   final bool isTrashed;
   final DateTime? trashedAt;
+  final bool isSynced;
 
   Map<String, dynamic> toMap() {
     return {
@@ -70,6 +72,7 @@ class Note {
       isPinned: map['isPinned'] as bool? ?? false,
       isTrashed: map['isTrashed'] as bool? ?? false,
       trashedAt: trashedAt,
+      isSynced: true,
     );
   }
 
@@ -104,6 +107,7 @@ class Note {
     bool? isPinned,
     bool? isTrashed,
     DateTime? trashedAt,
+    bool? isSynced,
   }) {
     return Note(
       id: id ?? this.id,
@@ -116,6 +120,7 @@ class Note {
       isPinned: isPinned ?? this.isPinned,
       isTrashed: isTrashed ?? this.isTrashed,
       trashedAt: trashedAt ?? this.trashedAt,
+      isSynced: isSynced ?? this.isSynced,
     );
   }
 }
@@ -144,13 +149,14 @@ class NoteAdapter extends TypeAdapter<Note> {
       trashedAt: fields[8] == null
           ? null
           : DateTime.fromMillisecondsSinceEpoch(fields[8] as int),
+      isSynced: fields[10] as bool? ?? true,
     );
   }
 
   @override
   void write(BinaryWriter writer, Note obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -170,6 +176,8 @@ class NoteAdapter extends TypeAdapter<Note> {
       ..writeByte(8)
       ..write(obj.trashedAt?.millisecondsSinceEpoch)
       ..writeByte(9)
-      ..write(obj.audioUrl);
+      ..write(obj.audioUrl)
+      ..writeByte(10)
+      ..write(obj.isSynced);
   }
 }

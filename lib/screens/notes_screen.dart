@@ -27,6 +27,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
   final List<Note> _items = [];
   String _query = '';
   bool _hasFocus = false;
+  bool _searchOpen = false;
 
   @override
   void initState() {
@@ -44,8 +45,19 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
   }
 
   void _handleFocusChange() {
-    if (_hasFocus != _focusNode.hasFocus) {
-      setState(() => _hasFocus = _focusNode.hasFocus);
+    final focus = _focusNode.hasFocus;
+    final normalized = _query.trim();
+    bool nextOpen = _searchOpen;
+    if (focus) {
+      nextOpen = true;
+    } else if (normalized.isEmpty) {
+      nextOpen = false;
+    }
+    if (_hasFocus != focus || _searchOpen != nextOpen) {
+      setState(() {
+        _hasFocus = focus;
+        _searchOpen = nextOpen;
+      });
     }
   }
 
@@ -56,7 +68,15 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
   void _clearSearch() {
     _controller.clear();
     FocusScope.of(context).unfocus();
-    setState(() => _query = '');
+    setState(() {
+      _query = '';
+      _searchOpen = false;
+    });
+  }
+
+  void _openSearch() {
+    setState(() => _searchOpen = true);
+    _focusNode.requestFocus();
   }
 
   void _syncNotes(List<Note> updated) {
@@ -143,6 +163,8 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
       content = AnimatedList(
         key: _listKey,
         initialItemCount: _items.length,
+        padding: EdgeInsets.zero,
+        primary: false,
         itemBuilder: (context, index, animation) {
           final note = _items[index];
           return _buildAnimatedItem(note, animation);
@@ -152,6 +174,8 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
       content = ListView.builder(
         key: ValueKey(query),
         itemCount: notes.length,
+        padding: EdgeInsets.zero,
+        primary: false,
         itemBuilder: (context, index) {
           return NoteCard(note: notes[index]);
         },
@@ -161,95 +185,141 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
     return Scaffold(
       backgroundColor: colors.bg,
       body: SafeArea(
+        bottom: false,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: Column(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 48,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: colors.bgCard,
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(color: colors.border),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            LucideIcons.search,
-                            size: 20,
-                            color: colors.textSecondary,
+              SizedBox(
+                height: 48,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final maxWidth = constraints.maxWidth;
+                    final isEmpty = query.isEmpty;
+                    final iconColor = _searchOpen && isEmpty
+                        ? colors.textSecondary
+                        : colors.textPrimary;
+                    return Stack(
+                      alignment: Alignment.centerRight,
+                      children: [
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: AnimatedContainer(
+                            duration: Motion.fast,
+                            curve: Motion.easeOut,
+                            width: _searchOpen ? maxWidth : 48,
+                            height: 48,
+                            decoration: _searchOpen
+                                ? BoxDecoration(
+                                    color: colors.bgCard,
+                                    borderRadius: BorderRadius.circular(999),
+                                    border: Border.all(color: colors.border),
+                                  )
+                                : null,
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              controller: _controller,
-                              focusNode: _focusNode,
-                              onChanged: _updateQuery,
-                              textInputAction: TextInputAction.search,
-                              textCapitalization: TextCapitalization.none,
-                              decoration: InputDecoration(
-                                hintText: 'Search...',
-                                hintStyle: AppTextStyles.secondary.copyWith(
-                                  color: colors.textSecondary,
-                                ),
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
-                                border: InputBorder.none,
-                              ),
-                              style: AppTextStyles.primary.copyWith(
-                                height: 1.2,
-                                color: colors.textPrimary,
+                        ),
+                        Positioned.fill(
+                          child: AnimatedOpacity(
+                            opacity: _searchOpen ? 1 : 0,
+                            duration: Motion.fast,
+                            curve: Motion.easeOut,
+                            child: IgnorePointer(
+                              ignoring: !_searchOpen,
+                              child: Row(
+                                children: [
+                                  const SizedBox(width: 12),
+                                  Icon(
+                                    LucideIcons.search,
+                                    size: 24,
+                                    color: iconColor,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _controller,
+                                      focusNode: _focusNode,
+                                      onChanged: _updateQuery,
+                                      textInputAction: TextInputAction.search,
+                                      textCapitalization:
+                                          TextCapitalization.none,
+                                      decoration: InputDecoration(
+                                        hintText: 'Search...',
+                                        hintStyle:
+                                            AppTextStyles.secondary.copyWith(
+                                          color: colors.textSecondary,
+                                        ),
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.zero,
+                                        border: InputBorder.none,
+                                      ),
+                                      style: AppTextStyles.primary.copyWith(
+                                        height: 1.2,
+                                        color: colors.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () {
+                                      triggerHaptic(
+                                        ref,
+                                        HapticLevel.selection,
+                                      );
+                                      _clearSearch();
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: Icon(
+                                        LucideIcons.x,
+                                        size: 24,
+                                        color: colors.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  AnimatedSwitcher(
-                    duration: Motion.fast,
-                    switchInCurve: Motion.easeOut,
-                    switchOutCurve: Curves.easeIn,
-                    transitionBuilder: (child, animation) {
-                      return SizeTransition(
-                        sizeFactor: animation,
-                        axis: Axis.horizontal,
-                        axisAlignment: -1,
-                        child: FadeTransition(opacity: animation, child: child),
-                      );
-                    },
-                    child: query.isEmpty && !_hasFocus
-                        ? const SizedBox.shrink(key: ValueKey('empty'))
-                        : Padding(
-                            key: const ValueKey('clear'),
-                            padding: const EdgeInsets.only(left: 8),
-                            child: SparkIconButton(
-                              icon: LucideIcons.x,
-                              onPressed: _clearSearch,
-                              isCircular: true,
-                              borderColor: colors.border,
-                              backgroundColor: colors.bgCard,
-                              iconColor: colors.textPrimary,
-                              haptic: HapticLevel.selection,
+                        ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: IgnorePointer(
+                            ignoring: _searchOpen,
+                            child: AnimatedOpacity(
+                              opacity: _searchOpen ? 0 : 1,
+                              duration: Motion.fast,
+                              curve: Motion.easeOut,
+                              child: SparkIconButton(
+                                icon: LucideIcons.search,
+                                onPressed: _openSearch,
+                                isCircular: true,
+                                borderColor: colors.border,
+                                backgroundColor: colors.bgCard,
+                                iconColor: colors.textPrimary,
+                                size: 24,
+                                haptic: HapticLevel.selection,
+                              ),
                             ),
                           ),
-                  ),
-                ],
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
               const SizedBox(height: 16),
               Expanded(
-                child: MediaQuery.removeViewInsets(
+                child: MediaQuery.removePadding(
                   context: context,
-                  removeBottom: true,
-                  child: AnimatedSwitcher(
-                    duration: Motion.fast,
-                    switchInCurve: Motion.easeOut,
-                    switchOutCurve: Curves.easeIn,
-                    child: content,
+                  removeTop: true,
+                  child: MediaQuery.removeViewInsets(
+                    context: context,
+                    removeBottom: true,
+                    child: AnimatedSwitcher(
+                      duration: Motion.fast,
+                      switchInCurve: Motion.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      child: content,
+                    ),
                   ),
                 ),
               ),

@@ -50,7 +50,7 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
       backgroundColor: colors.bg,
       body: SafeArea(bottom: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.all(16),
           child: Column(
             children: [
               Row(
@@ -81,16 +81,17 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: colors.bgCard,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: colors.border),
                 ),
                 child: TextField(
                   controller: _controller,
                   textCapitalization: TextCapitalization.sentences,
                   maxLines: null,
-                  minLines: 6,
                   decoration: const InputDecoration(
                     border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
                   ),
                   style: AppTextStyles.primary.copyWith(color: colors.textPrimary),
                 ),
