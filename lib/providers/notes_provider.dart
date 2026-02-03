@@ -98,15 +98,23 @@ class NotesController extends ChangeNotifier {
     }
     _userId = userId;
     if (_userId == null) {
+      _notes = [];
+      notifyListeners();
       return;
     }
+    await _claimLegacyNotes(_userId!);
+    await load();
     await _syncWithRemote();
   }
 
   Future<void> load() async {
     _isLoading = true;
     notifyListeners();
-    _notes = _repository.getAll();
+    if (_userId == null) {
+      _notes = [];
+    } else {
+      _notes = _repository.getAllForOwner(_userId!);
+    }
     _isLoading = false;
     notifyListeners();
   }
@@ -123,6 +131,7 @@ class NotesController extends ChangeNotifier {
       content: trimmed,
       createdAt: now,
       updatedAt: now,
+      ownerId: _userId ?? '',
       isSynced: false,
     );
     await _repository.upsert(note);
@@ -139,6 +148,7 @@ class NotesController extends ChangeNotifier {
       audioPath: audioPath,
       createdAt: now,
       updatedAt: now,
+      ownerId: _userId ?? '',
       isSynced: false,
     );
     await _repository.upsert(note);
@@ -203,11 +213,14 @@ class NotesController extends ChangeNotifier {
     _isSyncing = true;
     try {
       final remoteNotes = await _remoteRepository.fetchNotes(_userId!);
-      final remoteIds = remoteNotes.map((note) => note.id).toSet();
+      final normalizedRemote = remoteNotes
+          .map((note) => note.copyWith(ownerId: _userId))
+          .toList();
+      final remoteIds = normalizedRemote.map((note) => note.id).toSet();
       final localById = {for (final note in _notes) note.id: note};
       bool changed = false;
 
-      for (final remote in remoteNotes) {
+      for (final remote in normalizedRemote) {
         final local = localById[remote.id];
         if (local == null) {
           await _repository.upsert(remote);
@@ -319,8 +332,22 @@ class NotesController extends ChangeNotifier {
         a.audioUrl == b.audioUrl &&
         a.createdAt == b.createdAt &&
         a.updatedAt == b.updatedAt &&
+        a.ownerId == b.ownerId &&
         a.isPinned == b.isPinned &&
         a.isTrashed == b.isTrashed &&
         a.trashedAt == b.trashedAt;
+  }
+
+  Future<void> _claimLegacyNotes(String ownerId) async {
+    final legacy = _repository
+        .getAllForOwner('')
+        .map((note) => note.copyWith(ownerId: ownerId, isSynced: false))
+        .toList();
+    if (legacy.isEmpty) {
+      return;
+    }
+    for (final note in legacy) {
+      await _repository.upsert(note);
+    }
   }
 }

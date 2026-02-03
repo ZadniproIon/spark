@@ -9,6 +9,7 @@ class Note {
     required this.content,
     required this.createdAt,
     required this.updatedAt,
+    required this.ownerId,
     this.audioPath,
     this.audioUrl,
     this.isPinned = false,
@@ -24,6 +25,7 @@ class Note {
   final String? audioUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String ownerId;
   final bool isPinned;
   final bool isTrashed;
   final DateTime? trashedAt;
@@ -37,6 +39,7 @@ class Note {
       'audioUrl': audioUrl,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
+      'ownerId': ownerId,
       'isPinned': isPinned,
       'isTrashed': isTrashed,
       'trashedAt': trashedAt,
@@ -69,10 +72,11 @@ class Note {
       audioUrl: map['audioUrl'] as String?,
       createdAt: createdAt,
       updatedAt: updatedAt,
+      ownerId: map['ownerId'] as String? ?? '',
       isPinned: map['isPinned'] as bool? ?? false,
       isTrashed: map['isTrashed'] as bool? ?? false,
       trashedAt: trashedAt,
-      isSynced: true,
+      isSynced: map['isSynced'] as bool? ?? true,
     );
   }
 
@@ -104,6 +108,7 @@ class Note {
     String? audioUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? ownerId,
     bool? isPinned,
     bool? isTrashed,
     DateTime? trashedAt,
@@ -117,6 +122,7 @@ class Note {
       audioUrl: audioUrl ?? this.audioUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      ownerId: ownerId ?? this.ownerId,
       isPinned: isPinned ?? this.isPinned,
       isTrashed: isTrashed ?? this.isTrashed,
       trashedAt: trashedAt ?? this.trashedAt,
@@ -144,6 +150,7 @@ class NoteAdapter extends TypeAdapter<Note> {
       audioUrl: fields[9] as String?,
       createdAt: DateTime.fromMillisecondsSinceEpoch(fields[4] as int),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(fields[5] as int),
+      ownerId: fields[11] as String? ?? '',
       isPinned: fields[6] as bool,
       isTrashed: fields[7] as bool,
       trashedAt: fields[8] == null
@@ -156,7 +163,7 @@ class NoteAdapter extends TypeAdapter<Note> {
   @override
   void write(BinaryWriter writer, Note obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -178,6 +185,8 @@ class NoteAdapter extends TypeAdapter<Note> {
       ..writeByte(9)
       ..write(obj.audioUrl)
       ..writeByte(10)
-      ..write(obj.isSynced);
+      ..write(obj.isSynced)
+      ..writeByte(11)
+      ..write(obj.ownerId);
   }
 }

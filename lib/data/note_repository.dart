@@ -7,8 +7,10 @@ class NoteRepository {
 
   final Box<Note> _box;
 
-  List<Note> getAll() {
-    return _box.values.toList(growable: false);
+  List<Note> getAllForOwner(String ownerId) {
+    return _box.values
+        .where((note) => note.ownerId == ownerId)
+        .toList(growable: false);
   }
 
   Note? getById(String id) {
