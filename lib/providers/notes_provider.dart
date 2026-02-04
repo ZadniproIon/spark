@@ -53,11 +53,14 @@ class NotesController extends ChangeNotifier {
   final RemoteNoteRepository _remoteRepository;
   final SupabaseStorageRepository _storageRepository;
   final Uuid _uuid = const Uuid();
+  static const String _guestOwnerId = 'guest-local';
 
   List<Note> _notes = [];
   bool _isLoading = true;
   bool _isSyncing = false;
   String? _userId;
+
+  String get _activeOwnerId => _userId ?? _guestOwnerId;
 
   bool get isLoading => _isLoading;
 
@@ -98,8 +101,8 @@ class NotesController extends ChangeNotifier {
     }
     _userId = userId;
     if (_userId == null) {
-      _notes = [];
-      notifyListeners();
+      await _claimLegacyNotesForGuest();
+      await load();
       return;
     }
     await _claimLegacyNotes(_userId!);
@@ -110,11 +113,7 @@ class NotesController extends ChangeNotifier {
   Future<void> load() async {
     _isLoading = true;
     notifyListeners();
-    if (_userId == null) {
-      _notes = [];
-    } else {
-      _notes = _repository.getAllForOwner(_userId!);
-    }
+    _notes = _repository.getAllForOwner(_activeOwnerId);
     _isLoading = false;
     notifyListeners();
   }
@@ -131,7 +130,7 @@ class NotesController extends ChangeNotifier {
       content: trimmed,
       createdAt: now,
       updatedAt: now,
-      ownerId: _userId ?? '',
+      ownerId: _activeOwnerId,
       isSynced: false,
     );
     await _repository.upsert(note);
@@ -148,7 +147,7 @@ class NotesController extends ChangeNotifier {
       audioPath: audioPath,
       createdAt: now,
       updatedAt: now,
-      ownerId: _userId ?? '',
+      ownerId: _activeOwnerId,
       isSynced: false,
     );
     await _repository.upsert(note);
@@ -342,6 +341,19 @@ class NotesController extends ChangeNotifier {
     final legacy = _repository
         .getAllForOwner('')
         .map((note) => note.copyWith(ownerId: ownerId, isSynced: false))
+        .toList();
+    if (legacy.isEmpty) {
+      return;
+    }
+    for (final note in legacy) {
+      await _repository.upsert(note);
+    }
+  }
+
+  Future<void> _claimLegacyNotesForGuest() async {
+    final legacy = _repository
+        .getAllForOwner('')
+        .map((note) => note.copyWith(ownerId: _guestOwnerId, isSynced: false))
         .toList();
     if (legacy.isEmpty) {
       return;

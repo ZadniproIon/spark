@@ -80,34 +80,4 @@ class AuthRepository {
     await _googleSignIn.signOut();
     await _auth.signOut();
   }
-
-  Future<void> reauthenticateWithPassword(String email, String password) async {
-    final user = _auth.currentUser;
-    if (user == null) {
-      throw FirebaseAuthException(code: 'no-current-user');
-    }
-    final credential = EmailAuthProvider.credential(
-      email: email,
-      password: password,
-    );
-    await user.reauthenticateWithCredential(credential);
-  }
-
-  Future<void> updateEmail(String email) async {
-    final user = _auth.currentUser;
-    if (user == null) {
-      throw FirebaseAuthException(code: 'no-current-user');
-    }
-    await user.updateEmail(email);
-    await user.reload();
-  }
-
-  Future<void> updatePassword(String password) async {
-    final user = _auth.currentUser;
-    if (user == null) {
-      throw FirebaseAuthException(code: 'no-current-user');
-    }
-    await user.updatePassword(password);
-    await user.reload();
-  }
 }

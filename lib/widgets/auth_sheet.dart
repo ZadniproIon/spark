@@ -26,50 +26,12 @@ class AuthSheet extends ConsumerStatefulWidget {
 }
 
 class _AuthSheetState extends ConsumerState<AuthSheet> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _error;
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
     super.dispose();
-  }
-
-  Future<void> _handleEmailAuth({required bool isSignIn}) async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
-    if (email.isEmpty || password.isEmpty) {
-      setState(() => _error = 'Enter email and password.');
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
-    try {
-      final auth = ref.read(authControllerProvider);
-      if (isSignIn) {
-        await auth.signInWithEmail(email, password);
-      } else {
-        await auth.registerWithEmail(email, password);
-      }
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-    } catch (error) {
-      if (mounted) {
-        setState(() => _error = error.toString());
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
   }
 
   Future<void> _handleGoogle() async {
@@ -96,53 +58,47 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
   @override
   Widget build(BuildContext context) {
     final colors = context.sparkColors;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return SafeArea(
       bottom: false,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        decoration: BoxDecoration(
-          color: colors.bg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border.all(color: colors.border),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                SparkIconButton(
-                  icon: LucideIcons.x,
-                  onPressed: () => Navigator.of(context).pop(),
-                  isCircular: true,
-                  borderColor: colors.border,
-                  backgroundColor: colors.bgCard,
-                  iconColor: colors.textPrimary,
-                  haptic: HapticLevel.light,
-                ),
-                const Spacer(),
-                Text(
-                  'Sign in',
-                  style: AppTextStyles.section.copyWith(
-                    color: colors.textPrimary,
+      child: AnimatedPadding(
+        duration: Motion.keyboard,
+        curve: Motion.easeOut,
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          decoration: BoxDecoration(
+            color: colors.bg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border.all(color: colors.border),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  SparkIconButton(
+                    icon: LucideIcons.x,
+                    onPressed: () => Navigator.of(context).pop(),
+                    isCircular: true,
+                    borderColor: colors.border,
+                    backgroundColor: colors.bgCard,
+                    iconColor: colors.textPrimary,
+                    haptic: HapticLevel.light,
                   ),
-                ),
-                const Spacer(),
-                const SizedBox(width: 40),
-              ],
-            ),
+                  const Spacer(),
+                  Text(
+                    'Sign in',
+                    style: AppTextStyles.section.copyWith(
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  const Spacer(),
+                  const SizedBox(width: 40),
+                ],
+              ),
             const SizedBox(height: 16),
-            _AuthField(
-              controller: _emailController,
-              hintText: 'Email',
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 12),
-            _AuthField(
-              controller: _passwordController,
-              hintText: 'Password',
-              obscureText: true,
-            ),
             if (_error != null) ...[
               const SizedBox(height: 12),
               Text(
@@ -151,97 +107,29 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
                   color: colors.red,
                 ),
               ),
+              const SizedBox(height: 12),
             ],
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _AuthActionButton(
-                    label: 'Sign in',
-                    onTap: _isLoading
-                        ? null
-                        : () => _handleEmailAuth(isSignIn: true),
-                    haptic: HapticLevel.medium,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _AuthActionButton(
-                    label: 'Create account',
-                    onTap: _isLoading
-                        ? null
-                        : () => _handleEmailAuth(isSignIn: false),
-                    haptic: HapticLevel.medium,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
             _AuthActionButton(
               icon: LucideIcons.globe,
               label: 'Continue with Google',
-              onTap: _isLoading ? null : _handleGoogle,
-              haptic: HapticLevel.medium,
-            ),
-            if (_isLoading) ...[
-              const SizedBox(height: 12),
-              Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: colors.textSecondary,
+                onTap: _isLoading ? null : _handleGoogle,
+                haptic: HapticLevel.medium,
+              ),
+              if (_isLoading) ...[
+                const SizedBox(height: 12),
+                Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: colors.textSecondary,
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AuthField extends StatelessWidget {
-  const _AuthField({
-    required this.controller,
-    required this.hintText,
-    this.obscureText = false,
-    this.keyboardType,
-  });
-
-  final TextEditingController controller;
-  final String hintText;
-  final bool obscureText;
-  final TextInputType? keyboardType;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.sparkColors;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: colors.bgCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colors.border),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        obscureText: obscureText,
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: AppTextStyles.secondary.copyWith(
-            color: colors.textSecondary,
           ),
-          border: InputBorder.none,
-          isDense: true,
-          contentPadding: EdgeInsets.zero,
-        ),
-        style: AppTextStyles.primary.copyWith(
-          color: colors.textPrimary,
-          height: 1.2,
         ),
       ),
     );

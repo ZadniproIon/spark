@@ -12,8 +12,6 @@ import '../theme/text_styles.dart';
 import '../utils/haptics.dart';
 import '../utils/motion.dart';
 import '../widgets/auth_sheet.dart';
-import 'change_email_screen.dart';
-import 'change_password_screen.dart';
 import 'recycle_bin_screen.dart';
 
 class MenuScreen extends ConsumerWidget {
@@ -254,27 +252,11 @@ class MenuScreen extends ConsumerWidget {
                 _MenuGroup(
                   children: [
                     _MenuItem(
-                      icon: LucideIcons.atSign,
-                      label: 'Change email',
+                      icon: LucideIcons.externalLink,
+                      label: 'Manage Google account',
                       onTap: () {
                         triggerHaptic(ref, HapticLevel.light);
-                        Navigator.of(context).push(
-                          Motion.fadeSlideRoute(
-                            page: const ChangeEmailScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    _MenuItem(
-                      icon: LucideIcons.lock,
-                      label: 'Change password',
-                      onTap: () {
-                        triggerHaptic(ref, HapticLevel.light);
-                        Navigator.of(context).push(
-                          Motion.fadeSlideRoute(
-                            page: const ChangePasswordScreen(),
-                          ),
-                        );
+                        _launchUrl(context, 'https://myaccount.google.com/');
                       },
                     ),
                     _MenuItem(
