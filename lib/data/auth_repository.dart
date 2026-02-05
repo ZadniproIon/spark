@@ -22,7 +22,7 @@ class AuthRepository {
 
   Future<void> signInWithGoogle() async {
     await _client.auth.signInWithOAuth(
-      Provider.google,
+      OAuthProvider.google,
       redirectTo: SupabaseConfig.authRedirectUrl,
     );
   }

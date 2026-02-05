@@ -38,8 +38,9 @@ class MenuScreen extends ConsumerWidget {
 
     final accountTitle = isGuest ? 'Guest mode' : 'Signed in';
     final accountSubtitle = isGuest
-        ? 'Sign in to sync across devices.'
+        ? 'Notes stay on this device until you sign in.'
         : (user.email ?? 'Google account');
+    final accountPillLabel = isGuest ? 'Guest' : 'Synced';
 
     return Scaffold(
       backgroundColor: colors.bg,
@@ -215,20 +216,45 @@ class MenuScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: colors.border),
                 ),
-                child: Column(
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      accountTitle,
-                      style: AppTextStyles.primary.copyWith(
-                        color: colors.textPrimary,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            accountTitle,
+                            style: AppTextStyles.primary.copyWith(
+                              color: colors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            accountSubtitle,
+                            style: AppTextStyles.secondary.copyWith(
+                              color: colors.textSecondary,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      accountSubtitle,
-                      style: AppTextStyles.secondary.copyWith(
-                        color: colors.textSecondary,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.bg,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: colors.border),
+                      ),
+                      child: Text(
+                        accountPillLabel,
+                        style: AppTextStyles.secondary.copyWith(
+                          fontSize: 12,
+                          color: colors.textSecondary,
+                        ),
                       ),
                     ),
                   ],
@@ -240,7 +266,7 @@ class MenuScreen extends ConsumerWidget {
                   children: [
                     _MenuItem(
                       icon: LucideIcons.logIn,
-                      label: 'Sign in or create account',
+                      label: 'Sign in to sync',
                       onTap: () {
                         triggerHaptic(ref, HapticLevel.medium);
                         showAuthSheet(context);

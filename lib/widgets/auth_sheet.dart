@@ -98,20 +98,27 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
                   const SizedBox(width: 40),
                 ],
               ),
-            const SizedBox(height: 16),
-            if (_error != null) ...[
               const SizedBox(height: 12),
               Text(
-                _error!,
+                'Guest notes merge into your account when you sign in.',
+                textAlign: TextAlign.center,
                 style: AppTextStyles.secondary.copyWith(
-                  color: colors.red,
+                  color: colors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 12),
-            ],
-            _AuthActionButton(
-              icon: LucideIcons.globe,
-              label: 'Continue with Google',
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _error!,
+                  style: AppTextStyles.secondary.copyWith(
+                    color: colors.red,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              _AuthActionButton(
+                icon: LucideIcons.globe,
+                label: 'Continue with Google',
                 onTap: _isLoading ? null : _handleGoogle,
                 haptic: HapticLevel.medium,
               ),

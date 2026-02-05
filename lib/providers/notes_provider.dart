@@ -12,6 +12,7 @@ import '../data/supabase_config.dart';
 import '../data/supabase_storage_repository.dart';
 import '../models/note.dart';
 import 'auth_provider.dart';
+import '../utils/note_utils.dart';
 
 final noteRepositoryProvider = Provider<NoteRepository>((ref) {
   final box = Hive.box<Note>('notes');
@@ -53,15 +54,30 @@ class NotesController extends ChangeNotifier {
   final SupabaseStorageRepository _storageRepository;
   final Uuid _uuid = const Uuid();
   static const String _guestOwnerId = 'guest-local';
+  static const Duration _syncInterval = Duration(seconds: 10);
 
   List<Note> _notes = [];
   bool _isLoading = true;
   bool _isSyncing = false;
   String? _userId;
+  Timer? _syncTimer;
 
   String get _activeOwnerId => _userId ?? _guestOwnerId;
 
   bool get isLoading => _isLoading;
+
+  bool get _hasUnsyncedNotes => _notes.any((note) => !note.isSynced);
+
+  DateTime _localSortTime(Note note) {
+    final localStamp = note.createdAtLocal;
+    if (localStamp != null && localStamp.isNotEmpty) {
+      final parsed = parseLocalTimestamp(localStamp);
+      if (parsed != null) {
+        return parsed;
+      }
+    }
+    return note.createdAt;
+  }
 
   List<Note> get activeNotes {
     final notes = _notes.where((note) => !note.isTrashed).toList();
@@ -69,7 +85,7 @@ class NotesController extends ChangeNotifier {
       if (a.isPinned != b.isPinned) {
         return a.isPinned ? -1 : 1;
       }
-      return b.updatedAt.compareTo(a.updatedAt);
+      return _localSortTime(b).compareTo(_localSortTime(a));
     });
     return notes;
   }
@@ -102,11 +118,14 @@ class NotesController extends ChangeNotifier {
     if (_userId == null) {
       await _claimLegacyNotesForGuest();
       await load();
+      _stopSyncLoop();
       return;
     }
     await _claimLegacyNotes(_userId!);
+    await _migrateGuestNotesToUser(_userId!);
     await load();
     await _syncWithRemote();
+    _ensureSyncLoop();
   }
 
   Future<void> load() async {
@@ -115,6 +134,7 @@ class NotesController extends ChangeNotifier {
     _notes = _repository.getAllForOwner(_activeOwnerId);
     _isLoading = false;
     notifyListeners();
+    _ensureSyncLoop();
   }
 
   Future<void> addTextNote(String content) async {
@@ -123,6 +143,7 @@ class NotesController extends ChangeNotifier {
       return;
     }
     final now = DateTime.now();
+    final localStamp = formatNoteLocalString(now);
     final note = Note(
       id: _uuid.v4(),
       type: NoteType.text,
@@ -130,6 +151,8 @@ class NotesController extends ChangeNotifier {
       createdAt: now,
       updatedAt: now,
       ownerId: _activeOwnerId,
+      createdAtLocal: localStamp,
+      updatedAtLocal: localStamp,
       isSynced: false,
     );
     await _repository.upsert(note);
@@ -139,6 +162,7 @@ class NotesController extends ChangeNotifier {
 
   Future<void> addVoiceNote(String audioPath) async {
     final now = DateTime.now();
+    final localStamp = formatNoteLocalString(now);
     final note = Note(
       id: _uuid.v4(),
       type: NoteType.voice,
@@ -147,6 +171,8 @@ class NotesController extends ChangeNotifier {
       createdAt: now,
       updatedAt: now,
       ownerId: _activeOwnerId,
+      createdAtLocal: localStamp,
+      updatedAtLocal: localStamp,
       isSynced: false,
     );
     await _repository.upsert(note);
@@ -155,9 +181,12 @@ class NotesController extends ChangeNotifier {
   }
 
   Future<void> updateNote(Note note, {String? content}) async {
+    final now = DateTime.now();
+    final localStamp = formatNoteLocalString(now);
     final updated = note.copyWith(
       content: content ?? note.content,
-      updatedAt: DateTime.now(),
+      updatedAt: now,
+      updatedAtLocal: localStamp,
       isSynced: false,
     );
     await _repository.upsert(updated);
@@ -225,11 +254,20 @@ class NotesController extends ChangeNotifier {
           localById[remote.id] = remote;
           changed = true;
         } else if (remote.updatedAt.isAfter(local.updatedAt)) {
-          await _repository.upsert(remote);
-          localById[remote.id] = remote;
+          final merged = remote.copyWith(
+            createdAtLocal: remote.createdAtLocal ?? local.createdAtLocal,
+            updatedAtLocal: remote.updatedAtLocal ?? local.updatedAtLocal,
+          );
+          await _repository.upsert(merged);
+          localById[remote.id] = merged;
           changed = true;
         } else if (!_notesEqual(local, remote)) {
           await _pushNoteToRemote(local);
+        } else if (!local.isSynced) {
+          final synced = local.copyWith(isSynced: true);
+          await _repository.upsert(synced);
+          localById[remote.id] = synced;
+          changed = true;
         }
       }
 
@@ -248,6 +286,7 @@ class NotesController extends ChangeNotifier {
       debugPrint('Remote sync failed: $error');
     } finally {
       _isSyncing = false;
+      _ensureSyncLoop();
     }
   }
 
@@ -261,6 +300,7 @@ class NotesController extends ChangeNotifier {
       final synced = prepared.copyWith(isSynced: true);
       await _repository.upsert(synced);
       _replaceLocalNote(synced);
+      _ensureSyncLoop();
     } catch (error) {
       debugPrint('Remote note update failed: $error');
     }
@@ -360,5 +400,45 @@ class NotesController extends ChangeNotifier {
     for (final note in legacy) {
       await _repository.upsert(note);
     }
+  }
+
+  Future<void> _migrateGuestNotesToUser(String ownerId) async {
+    final guestNotes = _repository
+        .getAllForOwner(_guestOwnerId)
+        .map((note) => note.copyWith(ownerId: ownerId, isSynced: false))
+        .toList();
+    if (guestNotes.isEmpty) {
+      return;
+    }
+    for (final note in guestNotes) {
+      await _repository.upsert(note);
+      unawaited(_pushNoteToRemote(note));
+    }
+  }
+
+  void _ensureSyncLoop() {
+    if (_userId == null) {
+      _stopSyncLoop();
+      return;
+    }
+    if (!_hasUnsyncedNotes) {
+      _stopSyncLoop();
+      return;
+    }
+    _syncTimer ??= Timer.periodic(
+      _syncInterval,
+      (_) => _syncWithRemote(),
+    );
+  }
+
+  void _stopSyncLoop() {
+    _syncTimer?.cancel();
+    _syncTimer = null;
+  }
+
+  @override
+  void dispose() {
+    _stopSyncLoop();
+    super.dispose();
   }
 }

@@ -12,6 +12,8 @@ class Note {
     required this.ownerId,
     this.audioPath,
     this.audioUrl,
+    this.createdAtLocal,
+    this.updatedAtLocal,
     this.isPinned = false,
     this.isTrashed = false,
     this.trashedAt,
@@ -26,6 +28,8 @@ class Note {
   final DateTime createdAt;
   final DateTime updatedAt;
   final String ownerId;
+  final String? createdAtLocal;
+  final String? updatedAtLocal;
   final bool isPinned;
   final bool isTrashed;
   final DateTime? trashedAt;
@@ -39,6 +43,8 @@ class Note {
       'audio_url': audioUrl,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'created_at_local': createdAtLocal,
+      'updated_at_local': updatedAtLocal,
       'owner_id': ownerId,
       'is_pinned': isPinned,
       'is_trashed': isTrashed,
@@ -76,6 +82,10 @@ class Note {
       createdAt: createdAt,
       updatedAt: updatedAt,
       ownerId: map['owner_id'] as String? ?? map['ownerId'] as String? ?? '',
+      createdAtLocal: map['created_at_local'] as String? ??
+          map['createdAtLocal'] as String?,
+      updatedAtLocal: map['updated_at_local'] as String? ??
+          map['updatedAtLocal'] as String?,
       isPinned: map['is_pinned'] as bool? ?? map['isPinned'] as bool? ?? false,
       isTrashed:
           map['is_trashed'] as bool? ?? map['isTrashed'] as bool? ?? false,
@@ -113,6 +123,8 @@ class Note {
     DateTime? createdAt,
     DateTime? updatedAt,
     String? ownerId,
+    String? createdAtLocal,
+    String? updatedAtLocal,
     bool? isPinned,
     bool? isTrashed,
     DateTime? trashedAt,
@@ -127,6 +139,8 @@ class Note {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       ownerId: ownerId ?? this.ownerId,
+      createdAtLocal: createdAtLocal ?? this.createdAtLocal,
+      updatedAtLocal: updatedAtLocal ?? this.updatedAtLocal,
       isPinned: isPinned ?? this.isPinned,
       isTrashed: isTrashed ?? this.isTrashed,
       trashedAt: trashedAt ?? this.trashedAt,
@@ -155,6 +169,8 @@ class NoteAdapter extends TypeAdapter<Note> {
       createdAt: DateTime.fromMillisecondsSinceEpoch(fields[4] as int),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(fields[5] as int),
       ownerId: fields[11] as String? ?? '',
+      createdAtLocal: fields[12] as String?,
+      updatedAtLocal: fields[13] as String?,
       isPinned: fields[6] as bool,
       isTrashed: fields[7] as bool,
       trashedAt: fields[8] == null
@@ -167,7 +183,7 @@ class NoteAdapter extends TypeAdapter<Note> {
   @override
   void write(BinaryWriter writer, Note obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(14)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -191,6 +207,10 @@ class NoteAdapter extends TypeAdapter<Note> {
       ..writeByte(10)
       ..write(obj.isSynced)
       ..writeByte(11)
-      ..write(obj.ownerId);
+      ..write(obj.ownerId)
+      ..writeByte(12)
+      ..write(obj.createdAtLocal)
+      ..writeByte(13)
+      ..write(obj.updatedAtLocal);
   }
 }

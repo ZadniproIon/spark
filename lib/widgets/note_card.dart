@@ -156,7 +156,10 @@ class NoteCard extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        formatNoteDate(note.updatedAt),
+                        formatNoteDateWithLocal(
+                          dateTime: note.updatedAt,
+                          localOverride: note.updatedAtLocal,
+                        ),
                         style: GoogleFonts.jetBrainsMono(
                           fontSize: 12,
                           fontWeight: FontWeight.w400,

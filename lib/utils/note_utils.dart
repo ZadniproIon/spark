@@ -41,5 +41,35 @@ List<String> extractUrls(String text) {
 }
 
 String formatNoteDate(DateTime dateTime) {
-  return DateFormat('MMM d, yyyy - h:mm a').format(dateTime);
+  return DateFormat('MMM d, yyyy - h:mm a').format(dateTime.toLocal());
+}
+
+String formatNoteLocalString(DateTime dateTime) {
+  return dateTime.toLocal().toIso8601String();
+}
+
+String formatNoteDateWithLocal({
+  required DateTime dateTime,
+  String? localOverride,
+}) {
+  if (localOverride != null && localOverride.isNotEmpty) {
+    final parsed = parseLocalTimestamp(localOverride);
+    if (parsed != null) {
+      return DateFormat('MMM d, yyyy - h:mm a').format(parsed);
+    }
+    return localOverride;
+  }
+  return formatNoteDate(dateTime);
+}
+
+DateTime? parseLocalTimestamp(String value) {
+  final iso = DateTime.tryParse(value);
+  if (iso != null) {
+    return iso.toLocal();
+  }
+  try {
+    return DateFormat('MMM d, yyyy - h:mm a', 'en_US').parse(value, true).toLocal();
+  } catch (_) {
+    return null;
+  }
 }

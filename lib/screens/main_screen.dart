@@ -5,11 +5,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../data/audio_recorder.dart';
+import '../providers/auth_provider.dart';
 import '../providers/notes_provider.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
 import '../utils/haptics.dart';
 import '../utils/motion.dart';
+import '../widgets/auth_sheet.dart';
 import '../widgets/icon_button.dart';
 
 class MainScreen extends ConsumerStatefulWidget {
@@ -26,6 +28,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   final FocusNode _focusNode = FocusNode();
   bool _hasText = false;
   bool _hasFocus = false;
+  bool _guestBannerPressed = false;
 
   @override
   void initState() {
@@ -76,11 +79,122 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     );
   }
 
+  Future<void> _showGuestInfoSheet() async {
+    final colors = context.sparkColors;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return SafeArea(
+          bottom: false,
+          child: Container(
+            decoration: BoxDecoration(
+              color: colors.bg,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 20,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Guest account',
+                      style: AppTextStyles.primary.copyWith(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: colors.textPrimary,
+                      ),
+                    ),
+                    const Spacer(),
+                    SparkIconButton(
+                      icon: LucideIcons.x,
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                      isCircular: true,
+                      borderColor: colors.border,
+                      backgroundColor: colors.bgCard,
+                      iconColor: colors.textPrimary,
+                      padding: 8,
+                      size: 20,
+                      haptic: HapticLevel.light,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _InfoRow(
+                  icon: LucideIcons.info,
+                  text:
+                      'Notes are stored only on this device while you’re a guest.',
+                ),
+                const SizedBox(height: 8),
+                _InfoRow(
+                  icon: LucideIcons.rotateCw,
+                  text:
+                      'When you sign in, guest notes are merged into your account.',
+                ),
+                const SizedBox(height: 8),
+                _InfoRow(
+                  icon: LucideIcons.logOut,
+                  text:
+                      'Logging out returns you to guest mode and keeps notes local.',
+                ),
+                const SizedBox(height: 12),
+                GestureDetector(
+                  onTap: () {
+                    triggerHaptic(ref, HapticLevel.medium);
+                    Navigator.of(sheetContext).pop();
+                    showAuthSheet(context);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.bgCard,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: colors.border),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          LucideIcons.logIn,
+                          size: 18,
+                          color: colors.textPrimary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Sign in to sync',
+                          style: AppTextStyles.button.copyWith(
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.sparkColors;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final keyboardVisible = bottomInset > 0;
+    final isGuest = ref.watch(authStateProvider).valueOrNull == null;
 
     return Scaffold(
       backgroundColor: colors.bg,
@@ -89,6 +203,78 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         bottom: false,
         child: Stack(
           children: [
+            AnimatedSwitcher(
+              duration: Motion.fast,
+              switchInCurve: Motion.easeOut,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (child, animation) {
+                final fade = Tween<double>(begin: 0, end: 1).animate(animation);
+                final slide = Tween<Offset>(
+                  begin: const Offset(0, -0.1),
+                  end: Offset.zero,
+                ).animate(animation);
+                return FadeTransition(
+                  opacity: fade,
+                  child: SlideTransition(position: slide, child: child),
+                );
+              },
+              child: isGuest
+                  ? Align(
+                      key: const ValueKey('guest-banner'),
+                      alignment: Alignment.topCenter,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTapDown: (_) =>
+                              setState(() => _guestBannerPressed = true),
+                          onTapCancel: () =>
+                              setState(() => _guestBannerPressed = false),
+                          onTapUp: (_) =>
+                              setState(() => _guestBannerPressed = false),
+                          onTap: () {
+                            triggerHaptic(ref, HapticLevel.light);
+                            _showGuestInfoSheet();
+                          },
+                          child: AnimatedScale(
+                            duration: Motion.fast,
+                            curve: Motion.easeOut,
+                            scale: _guestBannerPressed ? 0.98 : 1,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colors.bgCard,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: colors.border),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    LucideIcons.info,
+                                    size: 16,
+                                    color: colors.textPrimary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'You’re on a guest account',
+                                    style: AppTextStyles.secondary.copyWith(
+                                      fontSize: 12,
+                                      color: colors.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(key: ValueKey('guest-banner-empty')),
+            ),
             Align(
               alignment: Alignment.center,
               child: AnimatedSwitcher(
@@ -247,6 +433,40 @@ class _VoiceRecorderSheet extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<_VoiceRecorderSheet> createState() => _VoiceRecorderSheetState();
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.icon,
+    required this.text,
+  });
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.sparkColors;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          size: 18,
+          color: colors.textPrimary,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: AppTextStyles.secondary.copyWith(
+              color: colors.textSecondary,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _VoiceRecorderSheetState extends ConsumerState<_VoiceRecorderSheet> {
