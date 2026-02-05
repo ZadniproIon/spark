@@ -1,83 +1,33 @@
-﻿import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'supabase_config.dart';
 
 class AuthRepository {
-  AuthRepository(this._auth, this._googleSignIn);
+  AuthRepository(this._client);
 
-  final FirebaseAuth _auth;
-  final GoogleSignIn _googleSignIn;
+  final SupabaseClient _client;
 
-  Stream<User?> authStateChanges() => _auth.authStateChanges();
-
-  User? get currentUser => _auth.currentUser;
-
-  Future<UserCredential> signInAnonymously() async {
-    return _auth.signInAnonymously();
+  Stream<User?> authStateChanges() {
+    return _client.auth.onAuthStateChange.map(
+      (data) => data.session?.user,
+    );
   }
+
+  User? get currentUser => _client.auth.currentUser;
 
   Future<void> ensureGuest() async {
-    if (_auth.currentUser == null) {
-      await _auth.signInAnonymously();
-    }
+    // Guest mode is local-only; no remote auth needed.
+    return;
   }
 
-  Future<UserCredential> signInWithEmail(String email, String password) async {
-    return _auth.signInWithEmailAndPassword(email: email, password: password);
-  }
-
-  Future<UserCredential> registerWithEmail(String email, String password) async {
-    return _auth.createUserWithEmailAndPassword(email: email, password: password);
-  }
-
-  Future<UserCredential> upgradeAnonymousWithEmail(
-    String email,
-    String password,
-  ) async {
-    final user = _auth.currentUser;
-    final credential = EmailAuthProvider.credential(
-      email: email,
-      password: password,
+  Future<void> signInWithGoogle() async {
+    await _client.auth.signInWithOAuth(
+      Provider.google,
+      redirectTo: SupabaseConfig.authRedirectUrl,
     );
-
-    if (user != null && user.isAnonymous) {
-      return user.linkWithCredential(credential);
-    }
-    return _auth.signInWithCredential(credential);
-  }
-
-  Future<UserCredential> signInWithGoogle() async {
-    final googleUser = await _googleSignIn.signIn();
-    if (googleUser == null) {
-      throw Exception('Google sign-in aborted');
-    }
-    final googleAuth = await googleUser.authentication;
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-    return _auth.signInWithCredential(credential);
-  }
-
-  Future<UserCredential> upgradeAnonymousWithGoogle() async {
-    final googleUser = await _googleSignIn.signIn();
-    if (googleUser == null) {
-      throw Exception('Google sign-in aborted');
-    }
-    final googleAuth = await googleUser.authentication;
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-
-    final user = _auth.currentUser;
-    if (user != null && user.isAnonymous) {
-      return user.linkWithCredential(credential);
-    }
-    return _auth.signInWithCredential(credential);
   }
 
   Future<void> signOut() async {
-    await _googleSignIn.signOut();
-    await _auth.signOut();
+    await _client.auth.signOut();
   }
 }

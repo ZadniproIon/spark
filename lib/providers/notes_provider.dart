@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
@@ -20,7 +19,7 @@ final noteRepositoryProvider = Provider<NoteRepository>((ref) {
 });
 
 final remoteNoteRepositoryProvider = Provider<RemoteNoteRepository>((ref) {
-  return RemoteNoteRepository(FirebaseFirestore.instance);
+  return RemoteNoteRepository(Supabase.instance.client);
 });
 
 final supabaseStorageRepositoryProvider = Provider<SupabaseStorageRepository>((ref) {
@@ -39,7 +38,7 @@ final notesProvider = ChangeNotifierProvider<NotesController>((ref) {
   ref.listen<AsyncValue<dynamic>>(
     authStateProvider,
     (previous, next) {
-      controller.setAuthUser(next.valueOrNull?.uid);
+      controller.setAuthUser(next.valueOrNull?.id);
     },
     fireImmediately: true,
   );

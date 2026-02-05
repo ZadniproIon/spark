@@ -75,7 +75,7 @@ class NoteCard extends ConsumerWidget {
       color: colors.textPrimary,
     );
     final user = ref.watch(authStateProvider).valueOrNull;
-    final showSyncDot = user != null && !user.isAnonymous;
+    final showSyncDot = user != null;
     return AnimatedContainer(
       duration: Motion.fast,
       curve: Motion.easeOut,

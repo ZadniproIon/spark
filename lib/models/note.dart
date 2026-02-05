@@ -36,13 +36,13 @@ class Note {
       'id': id,
       'type': type.name,
       'content': content,
-      'audioUrl': audioUrl,
-      'createdAt': createdAt,
-      'updatedAt': updatedAt,
-      'ownerId': ownerId,
-      'isPinned': isPinned,
-      'isTrashed': isTrashed,
-      'trashedAt': trashedAt,
+      'audio_url': audioUrl,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+      'owner_id': ownerId,
+      'is_pinned': isPinned,
+      'is_trashed': isTrashed,
+      'trashed_at': trashedAt?.toIso8601String(),
     };
   }
 
@@ -60,21 +60,25 @@ class Note {
       resolvedType = NoteType.values[rawType];
     }
 
-    final createdAt = _readDate(map['createdAt']);
-    final updatedAt = _readDate(map['updatedAt'], fallback: createdAt);
-    final trashedAt = _readNullableDate(map['trashedAt']);
+    final createdAt =
+        _readDate(map['created_at'] ?? map['createdAt']);
+    final updatedAt =
+        _readDate(map['updated_at'] ?? map['updatedAt'], fallback: createdAt);
+    final trashedAt =
+        _readNullableDate(map['trashed_at'] ?? map['trashedAt']);
 
     return Note(
       id: id ?? (map['id'] as String? ?? ''),
       type: resolvedType,
       content: map['content'] as String? ?? '',
       audioPath: map['audioPath'] as String?,
-      audioUrl: map['audioUrl'] as String?,
+      audioUrl: map['audio_url'] as String? ?? map['audioUrl'] as String?,
       createdAt: createdAt,
       updatedAt: updatedAt,
-      ownerId: map['ownerId'] as String? ?? '',
-      isPinned: map['isPinned'] as bool? ?? false,
-      isTrashed: map['isTrashed'] as bool? ?? false,
+      ownerId: map['owner_id'] as String? ?? map['ownerId'] as String? ?? '',
+      isPinned: map['is_pinned'] as bool? ?? map['isPinned'] as bool? ?? false,
+      isTrashed:
+          map['is_trashed'] as bool? ?? map['isTrashed'] as bool? ?? false,
       trashedAt: trashedAt,
       isSynced: map['isSynced'] as bool? ?? true,
     );

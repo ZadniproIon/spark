@@ -34,7 +34,7 @@ class MenuScreen extends ConsumerWidget {
     final hapticsEnabled = ref.watch(hapticsProvider);
     final authState = ref.watch(authStateProvider);
     final user = authState.valueOrNull;
-    final isGuest = user == null || user.isAnonymous;
+    final isGuest = user == null;
 
     final accountTitle = isGuest ? 'Guest mode' : 'Signed in';
     final accountSubtitle = isGuest
