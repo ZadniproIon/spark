@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -8,6 +10,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/haptics_provider.dart';
+import '../providers/notes_provider.dart';
 import '../providers/theme_provider.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
@@ -17,10 +20,7 @@ import '../widgets/auth_sheet.dart';
 import 'recycle_bin_screen.dart';
 
 class MenuScreen extends ConsumerWidget {
-  const MenuScreen({
-    super.key,
-    this.onBack,
-  });
+  const MenuScreen({super.key, this.onBack});
 
   final VoidCallback? onBack;
 
@@ -45,7 +45,8 @@ class MenuScreen extends ConsumerWidget {
       final info = DeviceInfoPlugin();
       final android = await info.androidInfo;
       deviceInfo = 'Device: ${android.manufacturer} ${android.model}';
-      osInfo = 'OS: Android ${android.version.release} (SDK ${android.version.sdkInt})';
+      osInfo =
+          'OS: Android ${android.version.release} (SDK ${android.version.sdkInt})';
     } catch (_) {
       // Ignore and fallback to unknown.
     }
@@ -81,14 +82,206 @@ class MenuScreen extends ConsumerWidget {
         SnackBar(
           content: Text(
             'Unable to open email app.',
-            style: AppTextStyles.secondary.copyWith(
-              color: colors.textPrimary,
-            ),
+            style: AppTextStyles.secondary.copyWith(color: colors.textPrimary),
           ),
           backgroundColor: colors.bgCard,
         ),
       );
     }
+  }
+
+  Future<void> _showDeleteAccountCountdown(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final colors = context.sparkColors;
+    int secondsLeft = 10;
+    Timer? timer;
+    bool timerStarted = false;
+    bool isDeleting = false;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            if (!timerStarted) {
+              timerStarted = true;
+              timer = Timer.periodic(const Duration(seconds: 1), (t) {
+                if (secondsLeft <= 0) {
+                  t.cancel();
+                  return;
+                }
+                if (sheetContext.mounted) {
+                  setSheetState(() => secondsLeft -= 1);
+                }
+              });
+            }
+
+            final canDelete = secondsLeft == 0;
+
+            return SafeArea(
+              top: false,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: colors.bg,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(24),
+                  ),
+                ),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Delete account',
+                      style: AppTextStyles.primary.copyWith(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: colors.red,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'This action is permanent. Wait $secondsLeft seconds to continue.',
+                      style: AppTextStyles.secondary.copyWith(
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.of(sheetContext).pop(),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: colors.border),
+                              foregroundColor: colors.textPrimary,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: Text(
+                              'Cancel',
+                              style: AppTextStyles.primary.copyWith(
+                                color: colors.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: canDelete
+                                ? (isDeleting
+                                      ? null
+                                      : () async {
+                                          triggerHaptic(ref, HapticLevel.heavy);
+                                          setSheetState(
+                                            () => isDeleting = true,
+                                          );
+                                          try {
+                                            await ref
+                                                .read(notesProvider)
+                                                .purgeRemoteDataForCurrentUser();
+                                            await ref
+                                                .read(authControllerProvider)
+                                                .deleteCurrentAccount();
+                                            await ref
+                                                .read(notesProvider)
+                                                .wipeAllLocalData();
+                                            await ref
+                                                .read(authControllerProvider)
+                                                .signOutToGuest();
+
+                                            if (sheetContext.mounted) {
+                                              Navigator.of(sheetContext).pop();
+                                            }
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    'Account deleted.',
+                                                    style: AppTextStyles
+                                                        .secondary
+                                                        .copyWith(
+                                                          color: colors
+                                                              .textPrimary,
+                                                        ),
+                                                  ),
+                                                  backgroundColor:
+                                                      colors.bgCard,
+                                                ),
+                                              );
+                                            }
+                                          } catch (error) {
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    'Delete failed: $error',
+                                                    style: AppTextStyles
+                                                        .secondary
+                                                        .copyWith(
+                                                          color: colors
+                                                              .textPrimary,
+                                                        ),
+                                                  ),
+                                                  backgroundColor:
+                                                      colors.bgCard,
+                                                ),
+                                              );
+                                            }
+                                            if (sheetContext.mounted) {
+                                              setSheetState(
+                                                () => isDeleting = false,
+                                              );
+                                            }
+                                          }
+                                        })
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: colors.red,
+                              disabledBackgroundColor: colors.red.withValues(
+                                alpha: 0.35,
+                              ),
+                              foregroundColor: Colors.white,
+                              disabledForegroundColor: Colors.white.withValues(
+                                alpha: 0.7,
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: Text(
+                              canDelete
+                                  ? (isDeleting
+                                        ? 'Deleting...'
+                                        : 'Delete account')
+                                  : 'Delete in ${secondsLeft}s',
+                              style: AppTextStyles.primary.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    ).whenComplete(() {
+      timer?.cancel();
+    });
   }
 
   @override
@@ -123,11 +316,7 @@ class MenuScreen extends ConsumerWidget {
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      LucideIcons.flame,
-                      color: colors.flame,
-                      size: 48,
-                    ),
+                    Icon(LucideIcons.flame, color: colors.flame, size: 48),
                     const SizedBox(width: 8),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,14 +384,18 @@ class MenuScreen extends ConsumerWidget {
                               MaterialTapTargetSize.shrinkWrap,
                           onChanged: (value) {
                             triggerHaptic(ref, HapticLevel.selection);
-                            ref.read(hapticsProvider.notifier).setEnabled(value);
+                            ref
+                                .read(hapticsProvider.notifier)
+                                .setEnabled(value);
                           },
                         ),
                       ),
                     ),
                     onTap: () {
                       triggerHaptic(ref, HapticLevel.selection);
-                      ref.read(hapticsProvider.notifier).setEnabled(!hapticsEnabled);
+                      ref
+                          .read(hapticsProvider.notifier)
+                          .setEnabled(!hapticsEnabled);
                     },
                   ),
                   _MenuItem(
@@ -277,8 +470,7 @@ class MenuScreen extends ConsumerWidget {
                         context,
                         ref,
                         subject: 'Spark Feature Request',
-                        template:
-                            'Feature idea:\n\nWhy it would be useful:',
+                        template: 'Feature idea:\n\nWhy it would be useful:',
                       );
                     },
                   ),
@@ -384,6 +576,7 @@ class MenuScreen extends ConsumerWidget {
                       isDestructive: true,
                       onTap: () {
                         triggerHaptic(ref, HapticLevel.heavy);
+                        _showDeleteAccountCountdown(context, ref);
                       },
                     ),
                   ],
@@ -507,9 +700,7 @@ class _MenuItem extends StatelessWidget {
 }
 
 class _MenuGroup extends StatelessWidget {
-  const _MenuGroup({
-    required this.children,
-  });
+  const _MenuGroup({required this.children});
 
   final List<Widget> children;
 
@@ -529,11 +720,7 @@ class _MenuGroup extends StatelessWidget {
           for (int i = 0; i < children.length; i++) ...[
             children[i],
             if (i != children.length - 1)
-              Divider(
-                height: 1,
-                thickness: 1,
-                color: colors.border,
-              ),
+              Divider(height: 1, thickness: 1, color: colors.border),
           ],
         ],
       ),

@@ -31,7 +31,15 @@ class AuthController {
   Future<void> signInWithGoogle() => _repository.signInWithGoogle();
 
   Future<void> signOutToGuest() async {
-    await _repository.signOut();
+    try {
+      await _repository.signOut();
+    } catch (_) {
+      // If the session is already invalidated (e.g., account deleted), continue.
+    }
     await _repository.ensureGuest();
+  }
+
+  Future<void> deleteCurrentAccount() async {
+    await _repository.deleteCurrentAccount();
   }
 }

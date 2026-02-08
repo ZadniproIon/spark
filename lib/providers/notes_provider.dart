@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
@@ -22,7 +23,9 @@ final remoteNoteRepositoryProvider = Provider<RemoteNoteRepository>((ref) {
   return RemoteNoteRepository(Supabase.instance.client);
 });
 
-final supabaseStorageRepositoryProvider = Provider<SupabaseStorageRepository>((ref) {
+final supabaseStorageRepositoryProvider = Provider<SupabaseStorageRepository>((
+  ref,
+) {
   return SupabaseStorageRepository(
     Supabase.instance.client,
     SupabaseConfig.voiceBucket,
@@ -35,18 +38,18 @@ final notesProvider = ChangeNotifierProvider<NotesController>((ref) {
   final storageRepo = ref.watch(supabaseStorageRepositoryProvider);
   final controller = NotesController(repo, remoteRepo, storageRepo);
   controller.load();
-  ref.listen<AsyncValue<dynamic>>(
-    authStateProvider,
-    (previous, next) {
-      controller.setAuthUser(next.valueOrNull?.id);
-    },
-    fireImmediately: true,
-  );
+  ref.listen<AsyncValue<dynamic>>(authStateProvider, (previous, next) {
+    controller.setAuthUser(next.valueOrNull?.id);
+  }, fireImmediately: true);
   return controller;
 });
 
 class NotesController extends ChangeNotifier {
-  NotesController(this._repository, this._remoteRepository, this._storageRepository);
+  NotesController(
+    this._repository,
+    this._remoteRepository,
+    this._storageRepository,
+  );
 
   final NoteRepository _repository;
   final RemoteNoteRepository _remoteRepository;
@@ -194,10 +197,7 @@ class NotesController extends ChangeNotifier {
   }
 
   Future<void> togglePin(Note note) async {
-    final updated = note.copyWith(
-      isPinned: !note.isPinned,
-      isSynced: false,
-    );
+    final updated = note.copyWith(isPinned: !note.isPinned, isSynced: false);
     await _repository.upsert(updated);
     unawaited(_pushNoteToRemote(updated));
     await load();
@@ -230,6 +230,48 @@ class NotesController extends ChangeNotifier {
     await _repository.delete(note.id);
     await _deleteRemote(note);
     await load();
+  }
+
+  Future<void> purgeRemoteDataForCurrentUser() async {
+    if (_userId == null) {
+      return;
+    }
+    final uid = _userId!;
+    final remoteNotes = await _remoteRepository.fetchNotes(uid);
+    for (final note in remoteNotes) {
+      await _remoteRepository.delete(uid, note.id);
+      if (note.type == NoteType.voice) {
+        await _storageRepository.deleteNoteAudio(uid: uid, noteId: note.id);
+      }
+    }
+  }
+
+  Future<void> wipeAllLocalData() async {
+    _stopSyncLoop();
+    final allLocalNotes = Hive.box<Note>(
+      'notes',
+    ).values.toList(growable: false);
+    for (final note in allLocalNotes) {
+      if (note.type != NoteType.voice) {
+        continue;
+      }
+      final path = note.audioPath;
+      if (path == null || path.isEmpty) {
+        continue;
+      }
+      try {
+        final file = File(path);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      } catch (error) {
+        debugPrint('Local audio delete failed: $error');
+      }
+    }
+
+    await _repository.clear();
+    _notes = [];
+    notifyListeners();
   }
 
   Future<void> _syncWithRemote() async {
@@ -424,10 +466,7 @@ class NotesController extends ChangeNotifier {
       _stopSyncLoop();
       return;
     }
-    _syncTimer ??= Timer.periodic(
-      _syncInterval,
-      (_) => _syncWithRemote(),
-    );
+    _syncTimer ??= Timer.periodic(_syncInterval, (_) => _syncWithRemote());
   }
 
   void _stopSyncLoop() {
