@@ -84,6 +84,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      barrierColor: Colors.black54,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
         return SafeArea(
@@ -92,59 +93,46 @@ class _MainScreenState extends ConsumerState<MainScreen> {
             decoration: BoxDecoration(
               color: colors.bg,
               borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
+                top: Radius.circular(32),
               ),
             ),
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 20,
-            ),
+            padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      'Guest account',
-                      style: AppTextStyles.primary.copyWith(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: colors.textPrimary,
-                      ),
+                Text(
+                  'Guest account',
+                  style: AppTextStyles.primary.copyWith(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Column(
+                  children: const [
+                    _InfoRow(
+                      icon: LucideIcons.info,
+                      text:
+                          'Notes are stored only on this device while you’re a guest.',
                     ),
-                    const Spacer(),
-                    SparkIconButton(
-                      icon: LucideIcons.x,
-                      onPressed: () => Navigator.of(sheetContext).pop(),
-                      isCircular: true,
-                      borderColor: colors.border,
-                      backgroundColor: colors.bgCard,
-                      iconColor: colors.textPrimary,
-                      padding: 8,
-                      size: 20,
-                      haptic: HapticLevel.light,
+                    SizedBox(height: 12),
+                    _InfoRow(
+                      icon: LucideIcons.merge,
+                      text:
+                          'When you sign in, guest notes are merged into your account.',
+                    ),
+                    SizedBox(height: 12),
+                    _InfoRow(
+                      icon: LucideIcons.logOut,
+                      text:
+                          'Logging out returns you to guest mode and keeps notes local.',
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                _InfoRow(
-                  icon: LucideIcons.info,
-                  text:
-                      'Notes are stored only on this device while you’re a guest.',
-                ),
-                const SizedBox(height: 8),
-                _InfoRow(
-                  icon: LucideIcons.rotateCw,
-                  text:
-                      'When you sign in, guest notes are merged into your account.',
-                ),
-                const SizedBox(height: 8),
-                _InfoRow(
-                  icon: LucideIcons.logOut,
-                  text:
-                      'Logging out returns you to guest mode and keeps notes local.',
-                ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 24),
                 GestureDetector(
                   onTap: () {
                     triggerHaptic(ref, HapticLevel.medium);
@@ -152,13 +140,14 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                     showAuthSheet(context);
                   },
                   child: Container(
+                    width: double.infinity,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
+                      horizontal: 12,
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
                       color: colors.bgCard,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: colors.border),
                     ),
                     child: Row(
@@ -166,13 +155,15 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                       children: [
                         Icon(
                           LucideIcons.logIn,
-                          size: 18,
+                          size: 20,
                           color: colors.textPrimary,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           'Sign in to sync',
-                          style: AppTextStyles.button.copyWith(
+                          style: AppTextStyles.primary.copyWith(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                             color: colors.textPrimary,
                           ),
                         ),
@@ -180,7 +171,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
               ],
             ),
           ),
@@ -448,18 +438,19 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.sparkColors;
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Icon(
           icon,
-          size: 18,
+          size: 20,
           color: colors.textPrimary,
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 12),
         Expanded(
           child: Text(
             text,
             style: AppTextStyles.secondary.copyWith(
+              fontSize: 16,
               color: colors.textSecondary,
             ),
           ),

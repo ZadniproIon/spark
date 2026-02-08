@@ -2,6 +2,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
+import '../utils/audio_download.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
 import '../utils/haptics.dart';
@@ -24,6 +25,7 @@ class _VoicePlayerSheetState extends State<VoicePlayerSheet> {
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
   bool _isPlaying = false;
+  bool _isDownloading = false;
 
   @override
   void initState() {
@@ -76,6 +78,22 @@ class _VoicePlayerSheetState extends State<VoicePlayerSheet> {
     await _player.seek(clamped);
   }
 
+  Future<void> _download() async {
+    if (_isDownloading) return;
+    setState(() => _isDownloading = true);
+    try {
+      await saveVoiceNoteToDownloads(
+        context: context,
+        source: widget.source,
+        fileNameBase: 'spark-voice-${DateTime.now().millisecondsSinceEpoch}',
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isDownloading = false);
+      }
+    }
+  }
+
   String _format(Duration duration) {
     final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
     final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
@@ -116,6 +134,15 @@ class _VoicePlayerSheetState extends State<VoicePlayerSheet> {
                   haptic: HapticLevel.light,
                 ),
                 const Spacer(),
+                SparkIconButton(
+                  icon: _isDownloading ? LucideIcons.loader : LucideIcons.download,
+                  onPressed: _isDownloading ? null : _download,
+                  isCircular: true,
+                  borderColor: colors.border,
+                  backgroundColor: colors.bgCard,
+                  iconColor: colors.textPrimary,
+                  haptic: HapticLevel.light,
+                ),
               ],
             ),
             const Spacer(),

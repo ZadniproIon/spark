@@ -8,6 +8,7 @@ import '../models/note.dart';
 import '../providers/notes_provider.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
+import '../utils/audio_download.dart';
 import '../utils/haptics.dart';
 import '../utils/note_utils.dart';
 
@@ -66,6 +67,25 @@ Future<void> showNoteContextMenu(
                     triggerHapticFromContext(sheetContext, HapticLevel.selection);
                     Navigator.of(sheetContext).pop();
                     await Clipboard.setData(ClipboardData(text: note.content));
+                  },
+                ),
+              if (note.type == NoteType.voice &&
+                  (note.audioPath != null || note.audioUrl != null))
+                _MenuItem(
+                  icon: LucideIcons.download,
+                  label: 'Save to Downloads',
+                  onTap: () async {
+                    triggerHapticFromContext(sheetContext, HapticLevel.light);
+                    Navigator.of(sheetContext).pop();
+                    final source = note.audioPath ?? note.audioUrl;
+                    if (source == null || source.isEmpty) {
+                      return;
+                    }
+                    await saveVoiceNoteToDownloads(
+                      context: rootContext,
+                      source: source,
+                      fileNameBase: 'spark-voice-${note.id}',
+                    );
                   },
                 ),
               if (urls.isNotEmpty) _LinkSection(urls: urls),

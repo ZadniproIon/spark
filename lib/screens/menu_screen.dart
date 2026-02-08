@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/haptics_provider.dart';
@@ -25,6 +27,68 @@ class MenuScreen extends ConsumerWidget {
   Future<void> _launchUrl(BuildContext context, String url) async {
     final uri = Uri.parse(url);
     await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _sendFeedback(
+    BuildContext context,
+    WidgetRef ref, {
+    required String subject,
+    required String template,
+  }) async {
+    final colors = context.sparkColors;
+    String deviceInfo = 'Device: Unknown';
+    String osInfo = 'OS: Unknown';
+    String appInfo = 'App: Unknown';
+    String userInfo = 'User: Unknown';
+    // Locale/timezone intentionally omitted.
+    try {
+      final info = DeviceInfoPlugin();
+      final android = await info.androidInfo;
+      deviceInfo = 'Device: ${android.manufacturer} ${android.model}';
+      osInfo = 'OS: Android ${android.version.release} (SDK ${android.version.sdkInt})';
+    } catch (_) {
+      // Ignore and fallback to unknown.
+    }
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      appInfo = 'App: ${packageInfo.version} (${packageInfo.buildNumber})';
+    } catch (_) {
+      // Ignore and fallback to unknown.
+    }
+
+    final authState = ref.read(authStateProvider);
+    final user = authState.valueOrNull;
+    userInfo = user == null ? 'User: Guest' : 'User: ${user.id}';
+
+    final body = [
+      template,
+      '',
+      '---',
+      appInfo,
+      userInfo,
+      deviceInfo,
+      osInfo,
+    ].join('\n');
+
+    final encodedSubject = Uri.encodeComponent(subject);
+    final encodedBody = Uri.encodeComponent(body);
+    final uri = Uri.parse(
+      'mailto:nutzugt@gmail.com?subject=$encodedSubject&body=$encodedBody',
+    );
+    final ok = await launchUrl(uri);
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Unable to open email app.',
+            style: AppTextStyles.secondary.copyWith(
+              color: colors.textPrimary,
+            ),
+          ),
+          backgroundColor: colors.bgCard,
+        ),
+      );
+    }
   }
 
   @override
@@ -181,6 +245,13 @@ class MenuScreen extends ConsumerWidget {
                     label: 'Send feedback',
                     onTap: () {
                       triggerHaptic(ref, HapticLevel.light);
+                      _sendFeedback(
+                        context,
+                        ref,
+                        subject: 'Spark Feedback',
+                        template:
+                            'Hi! I wanted to share some feedback about Spark:',
+                      );
                     },
                   ),
                   _MenuItem(
@@ -188,6 +259,13 @@ class MenuScreen extends ConsumerWidget {
                     label: 'Report bug',
                     onTap: () {
                       triggerHaptic(ref, HapticLevel.light);
+                      _sendFeedback(
+                        context,
+                        ref,
+                        subject: 'Spark Bug Report',
+                        template:
+                            'Bug description:\n\nSteps to reproduce:\n1.\n2.\n3.\n\nExpected behavior:\nActual behavior:',
+                      );
                     },
                   ),
                   _MenuItem(
@@ -195,6 +273,13 @@ class MenuScreen extends ConsumerWidget {
                     label: 'Request a feature',
                     onTap: () {
                       triggerHaptic(ref, HapticLevel.light);
+                      _sendFeedback(
+                        context,
+                        ref,
+                        subject: 'Spark Feature Request',
+                        template:
+                            'Feature idea:\n\nWhy it would be useful:',
+                      );
                     },
                   ),
                 ],
