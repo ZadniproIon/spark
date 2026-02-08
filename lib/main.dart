@@ -26,6 +26,7 @@ Future<void> main() async {
     Hive.registerAdapter(NoteAdapter());
   }
   await Hive.openBox<Note>('notes');
+  await Hive.openBox('pending_remote_deletes');
   runApp(const ProviderScope(child: SparkApp()));
 }
 
@@ -106,12 +107,12 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         color: Theme.of(context).scaffoldBackgroundColor,
         child: PageView(
           controller: _controller,
-            physics: const BouncingScrollPhysics(),
-            onPageChanged: (index) {
-              FocusManager.instance.primaryFocus?.unfocus();
-              setState(() => _pageIndex = index);
-              triggerHapticFromContext(context, HapticLevel.selection);
-            },
+          physics: const BouncingScrollPhysics(),
+          onPageChanged: (index) {
+            FocusManager.instance.primaryFocus?.unfocus();
+            setState(() => _pageIndex = index);
+            triggerHapticFromContext(context, HapticLevel.selection);
+          },
           children: [
             MenuScreen(onBack: _openMain),
             const MainScreen(),

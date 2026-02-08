@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
@@ -10,10 +10,7 @@ import '../utils/haptics.dart';
 import '../widgets/icon_button.dart';
 
 class EditNoteScreen extends ConsumerStatefulWidget {
-  const EditNoteScreen({
-    super.key,
-    required this.note,
-  });
+  const EditNoteScreen({super.key, required this.note});
 
   final Note note;
 
@@ -37,7 +34,9 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
   }
 
   Future<void> _save() async {
-    await ref.read(notesProvider).updateNote(widget.note, content: _controller.text);
+    await ref
+        .read(notesProvider)
+        .updateNote(widget.note, content: _controller.text);
     if (mounted) {
       Navigator.of(context).pop();
     }
@@ -48,7 +47,8 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
     final colors = context.sparkColors;
     return Scaffold(
       backgroundColor: colors.bg,
-      body: SafeArea(bottom: false,
+      body: SafeArea(
+        bottom: false,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -93,7 +93,9 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
                     isDense: true,
                     contentPadding: EdgeInsets.zero,
                   ),
-                  style: AppTextStyles.primary.copyWith(color: colors.textPrimary),
+                  style: AppTextStyles.primary.copyWith(
+                    color: colors.textPrimary,
+                  ),
                 ),
               ),
             ],

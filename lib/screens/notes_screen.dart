@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
@@ -12,9 +12,7 @@ import '../widgets/icon_button.dart';
 import '../widgets/note_card.dart';
 
 class NotesScreen extends ConsumerStatefulWidget {
-  const NotesScreen({
-    super.key,
-  });
+  const NotesScreen({super.key});
 
   @override
   ConsumerState<NotesScreen> createState() => _NotesScreenState();
@@ -105,10 +103,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
       final currentIndex = _items.indexWhere((item) => item.id == note.id);
       if (currentIndex == -1) {
         _items.insert(i, note);
-        _listKey.currentState!.insertItem(
-          i,
-          duration: Motion.fast,
-        );
+        _listKey.currentState!.insertItem(i, duration: Motion.fast);
       } else {
         _items[currentIndex] = note;
         if (currentIndex != i) {
@@ -119,10 +114,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
             (context, animation) => _buildAnimatedItem(moved, animation),
             duration: Motion.fast,
           );
-          _listKey.currentState!.insertItem(
-            i,
-            duration: Motion.fast,
-          );
+          _listKey.currentState!.insertItem(i, duration: Motion.fast);
         }
       }
     }
@@ -229,10 +221,12 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
                                 decoration: _searchOpen
                                     ? BoxDecoration(
                                         color: colors.bgCard,
-                                        borderRadius:
-                                            BorderRadius.circular(999),
-                                        border:
-                                            Border.all(color: colors.border),
+                                        borderRadius: BorderRadius.circular(
+                                          999,
+                                        ),
+                                        border: Border.all(
+                                          color: colors.border,
+                                        ),
                                       )
                                     : null,
                               ),
@@ -264,17 +258,15 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
                                               TextCapitalization.none,
                                           decoration: InputDecoration(
                                             hintText: 'Search...',
-                                            hintStyle:
-                                                AppTextStyles.secondary
-                                                    .copyWith(
-                                              color: colors.textSecondary,
-                                            ),
+                                            hintStyle: AppTextStyles.secondary
+                                                .copyWith(
+                                                  color: colors.textSecondary,
+                                                ),
                                             isDense: true,
                                             contentPadding: EdgeInsets.zero,
                                             border: InputBorder.none,
                                           ),
-                                          style:
-                                              AppTextStyles.primary.copyWith(
+                                          style: AppTextStyles.primary.copyWith(
                                             height: 1.2,
                                             color: colors.textPrimary,
                                           ),

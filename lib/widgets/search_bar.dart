@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../theme/colors.dart';
@@ -28,11 +28,7 @@ class SparkSearchBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            LucideIcons.search,
-            size: 18,
-            color: colors.textSecondary,
-          ),
+          Icon(LucideIcons.search, size: 18, color: colors.textSecondary),
           const SizedBox(width: 8),
           Expanded(
             child: TextField(

@@ -59,6 +59,7 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
   Widget build(BuildContext context) {
     final colors = context.sparkColors;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final safeBottom = MediaQuery.of(context).viewPadding.bottom;
     return SafeArea(
       bottom: false,
       child: AnimatedPadding(
@@ -66,7 +67,7 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
         curve: Motion.easeOut,
         padding: EdgeInsets.only(bottom: bottomInset),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: EdgeInsets.fromLTRB(16, 16, 16, 24 + safeBottom),
           decoration: BoxDecoration(
             color: colors.bg,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -110,9 +111,7 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
                 const SizedBox(height: 12),
                 Text(
                   _error!,
-                  style: AppTextStyles.secondary.copyWith(
-                    color: colors.red,
-                  ),
+                  style: AppTextStyles.secondary.copyWith(color: colors.red),
                 ),
               ],
               const SizedBox(height: 16),
@@ -176,18 +175,16 @@ class _AuthActionButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: colors.border),
           ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
               if (icon != null) ...[
                 Icon(icon, size: 18, color: colors.textPrimary),
                 const SizedBox(width: 8),
               ],
               Text(
                 label,
-                style: AppTextStyles.button.copyWith(
-                  color: colors.textPrimary,
-                ),
+                style: AppTextStyles.button.copyWith(color: colors.textPrimary),
               ),
             ],
           ),

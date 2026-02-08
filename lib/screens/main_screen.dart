@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -15,9 +15,7 @@ import '../widgets/auth_sheet.dart';
 import '../widgets/icon_button.dart';
 
 class MainScreen extends ConsumerStatefulWidget {
-  const MainScreen({
-    super.key,
-  });
+  const MainScreen({super.key});
 
   @override
   ConsumerState<MainScreen> createState() => _MainScreenState();
@@ -272,10 +270,14 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 switchInCurve: Motion.easeOut,
                 switchOutCurve: Curves.easeIn,
                 transitionBuilder: (child, animation) {
-                  final fade =
-                      Tween<double>(begin: 0, end: 1).animate(animation);
-                  final scale = Tween<double>(begin: 0.96, end: 1)
-                      .animate(animation);
+                  final fade = Tween<double>(
+                    begin: 0,
+                    end: 1,
+                  ).animate(animation);
+                  final scale = Tween<double>(
+                    begin: 0.96,
+                    end: 1,
+                  ).animate(animation);
                   return FadeTransition(
                     opacity: fade,
                     child: ScaleTransition(scale: scale, child: child),
@@ -373,10 +375,14 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                         switchInCurve: Motion.easeOut,
                         switchOutCurve: Curves.easeIn,
                         transitionBuilder: (child, animation) {
-                          final fade =
-                              Tween<double>(begin: 0, end: 1).animate(animation);
-                          final scale = Tween<double>(begin: 0.94, end: 1)
-                              .animate(animation);
+                          final fade = Tween<double>(
+                            begin: 0,
+                            end: 1,
+                          ).animate(animation);
+                          final scale = Tween<double>(
+                            begin: 0.94,
+                            end: 1,
+                          ).animate(animation);
                           return FadeTransition(
                             opacity: fade,
                             child: ScaleTransition(scale: scale, child: child),
@@ -391,8 +397,9 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                           borderColor: colors.border,
                           iconColor: colors.textPrimary,
                           padding: 12,
-                          haptic:
-                              _hasText ? HapticLevel.medium : HapticLevel.light,
+                          haptic: _hasText
+                              ? HapticLevel.medium
+                              : HapticLevel.light,
                           child: _hasText
                               ? SvgPicture.asset(
                                   'assets/icons/send-horizontal.svg',
@@ -422,14 +429,12 @@ class _VoiceRecorderSheet extends ConsumerStatefulWidget {
   const _VoiceRecorderSheet();
 
   @override
-  ConsumerState<_VoiceRecorderSheet> createState() => _VoiceRecorderSheetState();
+  ConsumerState<_VoiceRecorderSheet> createState() =>
+      _VoiceRecorderSheetState();
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.icon,
-    required this.text,
-  });
+  const _InfoRow({required this.icon, required this.text});
 
   final IconData icon;
   final String text;
@@ -440,11 +445,7 @@ class _InfoRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(
-          icon,
-          size: 20,
-          color: colors.textPrimary,
-        ),
+        Icon(icon, size: 20, color: colors.textPrimary),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
@@ -641,10 +642,7 @@ class _VoiceRecorderSheetState extends ConsumerState<_VoiceRecorderSheet> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _WaveformMeter(
-                    level: _level,
-                    color: colors.textSecondary,
-                  ),
+                  _WaveformMeter(level: _level, color: colors.textSecondary),
                   const SizedBox(height: 16),
                   AnimatedScale(
                     scale: _isRecording ? 1.0 : 0.95,
@@ -681,10 +679,7 @@ class _VoiceRecorderSheetState extends ConsumerState<_VoiceRecorderSheet> {
 }
 
 class _WaveformMeter extends StatelessWidget {
-  const _WaveformMeter({
-    required this.level,
-    required this.color,
-  });
+  const _WaveformMeter({required this.level, required this.color});
 
   final double level;
   final Color color;
@@ -695,20 +690,14 @@ class _WaveformMeter extends StatelessWidget {
       height: 72,
       width: double.infinity,
       child: CustomPaint(
-        painter: _WaveformPainter(
-          level: level,
-          color: color,
-        ),
+        painter: _WaveformPainter(level: level, color: color),
       ),
     );
   }
 }
 
 class _WaveformPainter extends CustomPainter {
-  const _WaveformPainter({
-    required this.level,
-    required this.color,
-  });
+  const _WaveformPainter({required this.level, required this.color});
 
   final double level;
   final Color color;
@@ -751,11 +740,7 @@ class _WaveformPainter extends CustomPainter {
     for (int i = 0; i < _pattern.length; i++) {
       final amp = maxAmp * clamped * _pattern[i];
       final x = step * i;
-      canvas.drawLine(
-        Offset(x, midY - amp),
-        Offset(x, midY + amp),
-        paint,
-      );
+      canvas.drawLine(Offset(x, midY - amp), Offset(x, midY + amp), paint);
     }
   }
 

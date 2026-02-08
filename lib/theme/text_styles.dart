@@ -1,29 +1,54 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTextStyles {
-  static TextStyle title = GoogleFonts.dmSans(
-    fontSize: 22,
-    fontWeight: FontWeight.w600,
-  );
-  static TextStyle section = GoogleFonts.dmSans(
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-  );
-  static TextStyle primary = GoogleFonts.dmSans(
-    fontSize: 16,
-    fontWeight: FontWeight.w400,
-  );
-  static TextStyle secondary = GoogleFonts.dmSans(
+  static TextStyle title = _dmSans(fontSize: 22, fontWeight: FontWeight.w600);
+  static TextStyle section = _dmSans(fontSize: 16, fontWeight: FontWeight.w600);
+  static TextStyle primary = _dmSans(fontSize: 16, fontWeight: FontWeight.w400);
+  static TextStyle secondary = _dmSans(
     fontSize: 14,
     fontWeight: FontWeight.w400,
   );
-  static TextStyle metadata = GoogleFonts.dmSans(
+  static TextStyle metadata = _dmSans(
     fontSize: 12,
     fontWeight: FontWeight.w400,
   );
-  static TextStyle button = GoogleFonts.dmSans(
-    fontSize: 14,
-    fontWeight: FontWeight.w600,
-  );
+  static TextStyle button = _dmSans(fontSize: 14, fontWeight: FontWeight.w600);
+
+  static TextStyle _dmSans({
+    required double fontSize,
+    required FontWeight fontWeight,
+  }) {
+    return GoogleFonts.dmSans(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      textStyle: TextStyle(fontFamilyFallback: _emojiFallbackFamilies),
+    );
+  }
+
+  static List<String> get _emojiFallbackFamilies {
+    if (kIsWeb) {
+      return const [
+        'Apple Color Emoji',
+        'Segoe UI Emoji',
+        'Noto Color Emoji',
+        'sans-serif',
+      ];
+    }
+
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return const ['SamsungColorEmoji', 'Noto Color Emoji', 'sans-serif'];
+      case TargetPlatform.iOS:
+      case TargetPlatform.macOS:
+        return const ['Apple Color Emoji'];
+      case TargetPlatform.windows:
+        return const ['Segoe UI Emoji'];
+      case TargetPlatform.linux:
+        return const ['Noto Color Emoji', 'sans-serif'];
+      case TargetPlatform.fuchsia:
+        return const ['Noto Color Emoji'];
+    }
+  }
 }

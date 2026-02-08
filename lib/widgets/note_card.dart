@@ -14,10 +14,7 @@ import 'context_menu.dart';
 import 'voice_player_sheet.dart';
 
 class NoteCard extends ConsumerWidget {
-  const NoteCard({
-    super.key,
-    required this.note,
-  });
+  const NoteCard({super.key, required this.note});
 
   final Note note;
 
@@ -56,12 +53,7 @@ class NoteCard extends ConsumerWidget {
       lastIndex = match.end;
     }
     if (lastIndex < text.length) {
-      spans.add(
-        TextSpan(
-          text: text.substring(lastIndex),
-          style: baseStyle,
-        ),
-      );
+      spans.add(TextSpan(text: text.substring(lastIndex), style: baseStyle));
     }
     return spans;
   }
@@ -83,9 +75,7 @@ class NoteCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: colors.bgCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: note.isPinned ? colors.flame : colors.border,
-        ),
+        border: Border.all(color: note.isPinned ? colors.flame : colors.border),
       ),
       child: Material(
         color: Colors.transparent,
@@ -102,9 +92,7 @@ class NoteCard extends ConsumerWidget {
                     context: context,
                     isScrollControlled: true,
                     backgroundColor: Colors.transparent,
-                    builder: (_) => VoicePlayerSheet(
-                      source: audioSource,
-                    ),
+                    builder: (_) => VoicePlayerSheet(source: audioSource),
                   );
                 }
               : null,
@@ -125,10 +113,7 @@ class NoteCard extends ConsumerWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: note.content.trim().isEmpty
-                            ? Text(
-                                'Voice note',
-                                style: baseTextStyle,
-                              )
+                            ? Text('Voice note', style: baseTextStyle)
                             : RichText(
                                 text: TextSpan(
                                   children: _buildLinkSpans(

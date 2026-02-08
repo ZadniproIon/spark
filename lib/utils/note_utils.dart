@@ -41,7 +41,7 @@ List<String> extractUrls(String text) {
 }
 
 String formatNoteDate(DateTime dateTime) {
-  return DateFormat('MMM d, yyyy - h:mm a').format(dateTime.toLocal());
+  return DateFormat('MMM d, yyyy - HH:mm').format(dateTime.toLocal());
 }
 
 String formatNoteLocalString(DateTime dateTime) {
@@ -55,7 +55,7 @@ String formatNoteDateWithLocal({
   if (localOverride != null && localOverride.isNotEmpty) {
     final parsed = parseLocalTimestamp(localOverride);
     if (parsed != null) {
-      return DateFormat('MMM d, yyyy - h:mm a').format(parsed);
+      return DateFormat('MMM d, yyyy - HH:mm').format(parsed);
     }
     return localOverride;
   }
@@ -68,7 +68,16 @@ DateTime? parseLocalTimestamp(String value) {
     return iso.toLocal();
   }
   try {
-    return DateFormat('MMM d, yyyy - h:mm a', 'en_US').parse(value, true).toLocal();
+    return DateFormat(
+      'MMM d, yyyy - HH:mm',
+      'en_US',
+    ).parse(value, true).toLocal();
+  } catch (_) {}
+  try {
+    return DateFormat(
+      'MMM d, yyyy - h:mm a',
+      'en_US',
+    ).parse(value, true).toLocal();
   } catch (_) {
     return null;
   }

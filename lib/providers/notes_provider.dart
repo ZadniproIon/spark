@@ -49,11 +49,12 @@ class NotesController extends ChangeNotifier {
     this._repository,
     this._remoteRepository,
     this._storageRepository,
-  );
+  ) : _pendingRemoteDeleteBox = Hive.box<dynamic>('pending_remote_deletes');
 
   final NoteRepository _repository;
   final RemoteNoteRepository _remoteRepository;
   final SupabaseStorageRepository _storageRepository;
+  final Box<dynamic> _pendingRemoteDeleteBox;
   final Uuid _uuid = const Uuid();
   static const String _guestOwnerId = 'guest-local';
   static const Duration _syncInterval = Duration(seconds: 10);
@@ -69,17 +70,28 @@ class NotesController extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
 
-  bool get _hasUnsyncedNotes => _notes.any((note) => !note.isSynced);
+  bool get _hasUnsyncedNotes =>
+      _notes.any((note) => !note.isSynced) || _hasPendingRemoteDeletes;
 
-  DateTime _localSortTime(Note note) {
-    final localStamp = note.createdAtLocal;
+  bool get _hasPendingRemoteDeletes {
+    if (_userId == null) {
+      return false;
+    }
+    final prefix = '${_userId!}::';
+    return _pendingRemoteDeleteBox.keys.any(
+      (key) => key.toString().startsWith(prefix),
+    );
+  }
+
+  DateTime _lastEditedSortTime(Note note) {
+    final localStamp = note.updatedAtLocal;
     if (localStamp != null && localStamp.isNotEmpty) {
       final parsed = parseLocalTimestamp(localStamp);
       if (parsed != null) {
         return parsed;
       }
     }
-    return note.createdAt;
+    return note.updatedAt;
   }
 
   List<Note> get activeNotes {
@@ -88,7 +100,7 @@ class NotesController extends ChangeNotifier {
       if (a.isPinned != b.isPinned) {
         return a.isPinned ? -1 : 1;
       }
-      return _localSortTime(b).compareTo(_localSortTime(a));
+      return _lastEditedSortTime(b).compareTo(_lastEditedSortTime(a));
     });
     return notes;
   }
@@ -294,6 +306,15 @@ class NotesController extends ChangeNotifier {
     }
 
     await _repository.clear();
+    if (_userId != null) {
+      final prefix = '${_userId!}::';
+      final pendingKeys = _pendingRemoteDeleteBox.keys
+          .where((key) => key.toString().startsWith(prefix))
+          .toList(growable: false);
+      for (final key in pendingKeys) {
+        await _pendingRemoteDeleteBox.delete(key);
+      }
+    }
     _notes = [];
     notifyListeners();
   }
@@ -304,6 +325,7 @@ class NotesController extends ChangeNotifier {
     }
     _isSyncing = true;
     try {
+      await _flushPendingRemoteDeletes();
       final remoteNotes = await _remoteRepository.fetchNotes(_userId!);
       final normalizedRemote = remoteNotes
           .map((note) => note.copyWith(ownerId: _userId))
@@ -403,8 +425,11 @@ class NotesController extends ChangeNotifier {
           noteId: note.id,
         );
       }
+      await _removePendingRemoteDelete(_userId!, note.id);
     } catch (error) {
       debugPrint('Remote delete failed: $error');
+      await _queuePendingRemoteDelete(note);
+      _ensureSyncLoop();
     }
   }
 
@@ -420,8 +445,10 @@ class NotesController extends ChangeNotifier {
           noteId: note.id,
         );
       }
+      await _removePendingRemoteDelete(_userId!, note.id);
     } catch (error) {
       debugPrint('Remote expired-trash delete failed: $error');
+      await _queuePendingRemoteDelete(note);
     }
   }
 
@@ -550,6 +577,50 @@ class NotesController extends ChangeNotifier {
       await _deleteRemoteIfPossible(note);
     }
     _notes.removeWhere((note) => expiredIds.contains(note.id));
+  }
+
+  String _pendingRemoteDeleteKey(String uid, String noteId) => '$uid::$noteId';
+
+  Future<void> _queuePendingRemoteDelete(Note note) async {
+    if (_userId == null) {
+      return;
+    }
+    final key = _pendingRemoteDeleteKey(_userId!, note.id);
+    await _pendingRemoteDeleteBox.put(key, note.type == NoteType.voice);
+  }
+
+  Future<void> _removePendingRemoteDelete(String uid, String noteId) async {
+    final key = _pendingRemoteDeleteKey(uid, noteId);
+    if (_pendingRemoteDeleteBox.containsKey(key)) {
+      await _pendingRemoteDeleteBox.delete(key);
+    }
+  }
+
+  Future<void> _flushPendingRemoteDeletes() async {
+    if (_userId == null) {
+      return;
+    }
+    final uid = _userId!;
+    final prefix = '$uid::';
+    final keys = _pendingRemoteDeleteBox.keys.toList(growable: false);
+    for (final key in keys) {
+      final keyString = key.toString();
+      if (!keyString.startsWith(prefix)) {
+        continue;
+      }
+      final noteId = keyString.substring(prefix.length);
+      final value = _pendingRemoteDeleteBox.get(key);
+      final isVoice = value is bool ? value : false;
+      try {
+        await _remoteRepository.delete(uid, noteId);
+        if (isVoice) {
+          await _storageRepository.deleteNoteAudio(uid: uid, noteId: noteId);
+        }
+        await _pendingRemoteDeleteBox.delete(key);
+      } catch (error) {
+        debugPrint('Pending remote delete failed: $error');
+      }
+    }
   }
 
   void _stopSyncLoop() {
