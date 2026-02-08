@@ -57,6 +57,7 @@ class NotesController extends ChangeNotifier {
   final Uuid _uuid = const Uuid();
   static const String _guestOwnerId = 'guest-local';
   static const Duration _syncInterval = Duration(seconds: 10);
+  static const Duration _trashRetention = Duration(days: 30);
 
   List<Note> _notes = [];
   bool _isLoading = true;
@@ -102,6 +103,28 @@ class NotesController extends ChangeNotifier {
     return notes;
   }
 
+  int daysUntilTrashAutoDelete(Note note) {
+    if (!note.isTrashed) {
+      return _trashRetention.inDays;
+    }
+    final now = DateTime.now();
+    final trashedAt = note.trashedAt ?? note.updatedAt;
+    final today = DateTime(now.year, now.month, now.day);
+    final expiresOn = DateTime(
+      trashedAt.year,
+      trashedAt.month,
+      trashedAt.day,
+    ).add(_trashRetention);
+    final days = expiresOn.difference(today).inDays;
+    if (days < 0) {
+      return 0;
+    }
+    if (days > _trashRetention.inDays) {
+      return _trashRetention.inDays;
+    }
+    return days;
+  }
+
   List<Note> search(String query) {
     final normalized = query.trim().toLowerCase();
     if (normalized.isEmpty) {
@@ -134,6 +157,7 @@ class NotesController extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     _notes = _repository.getAllForOwner(_activeOwnerId);
+    await _purgeExpiredTrashedNotes();
     _isLoading = false;
     notifyListeners();
     _ensureSyncLoop();
@@ -284,11 +308,25 @@ class NotesController extends ChangeNotifier {
       final normalizedRemote = remoteNotes
           .map((note) => note.copyWith(ownerId: _userId))
           .toList();
-      final remoteIds = normalizedRemote.map((note) => note.id).toSet();
       final localById = {for (final note in _notes) note.id: note};
       bool changed = false;
+      final activeRemote = <Note>[];
 
       for (final remote in normalizedRemote) {
+        if (_isTrashExpired(remote)) {
+          await _deleteRemoteIfPossible(remote);
+          if (localById.remove(remote.id) != null) {
+            await _repository.delete(remote.id);
+            changed = true;
+          }
+          continue;
+        }
+        activeRemote.add(remote);
+      }
+
+      final remoteIds = activeRemote.map((note) => note.id).toSet();
+
+      for (final remote in activeRemote) {
         final local = localById[remote.id];
         if (local == null) {
           await _repository.upsert(remote);
@@ -316,6 +354,12 @@ class NotesController extends ChangeNotifier {
           .where((note) => !remoteIds.contains(note.id))
           .toList();
       for (final note in missingRemote) {
+        if (_isTrashExpired(note)) {
+          await _repository.delete(note.id);
+          localById.remove(note.id);
+          changed = true;
+          continue;
+        }
         await _pushNoteToRemote(note);
       }
 
@@ -361,6 +405,23 @@ class NotesController extends ChangeNotifier {
       }
     } catch (error) {
       debugPrint('Remote delete failed: $error');
+    }
+  }
+
+  Future<void> _deleteRemoteIfPossible(Note note) async {
+    if (_userId == null) {
+      return;
+    }
+    try {
+      await _remoteRepository.delete(_userId!, note.id);
+      if (note.type == NoteType.voice) {
+        await _storageRepository.deleteNoteAudio(
+          uid: _userId!,
+          noteId: note.id,
+        );
+      }
+    } catch (error) {
+      debugPrint('Remote expired-trash delete failed: $error');
     }
   }
 
@@ -467,6 +528,28 @@ class NotesController extends ChangeNotifier {
       return;
     }
     _syncTimer ??= Timer.periodic(_syncInterval, (_) => _syncWithRemote());
+  }
+
+  bool _isTrashExpired(Note note) {
+    if (!note.isTrashed) {
+      return false;
+    }
+    final trashedAt = note.trashedAt ?? note.updatedAt;
+    final expiresAt = trashedAt.add(_trashRetention);
+    return !DateTime.now().isBefore(expiresAt);
+  }
+
+  Future<void> _purgeExpiredTrashedNotes() async {
+    final expired = _notes.where(_isTrashExpired).toList(growable: false);
+    if (expired.isEmpty) {
+      return;
+    }
+    final expiredIds = expired.map((note) => note.id).toSet();
+    for (final note in expired) {
+      await _repository.delete(note.id);
+      await _deleteRemoteIfPossible(note);
+    }
+    _notes.removeWhere((note) => expiredIds.contains(note.id));
   }
 
   void _stopSyncLoop() {

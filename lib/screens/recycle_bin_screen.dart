@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
@@ -54,10 +54,7 @@ class _RecycleBinScreenState extends ConsumerState<RecycleBinScreen> {
       final currentIndex = _items.indexWhere((item) => item.id == note.id);
       if (currentIndex == -1) {
         _items.insert(i, note);
-        _listKey.currentState!.insertItem(
-          i,
-          duration: Motion.fast,
-        );
+        _listKey.currentState!.insertItem(i, duration: Motion.fast);
       } else {
         _items[currentIndex] = note;
         if (currentIndex != i) {
@@ -68,10 +65,7 @@ class _RecycleBinScreenState extends ConsumerState<RecycleBinScreen> {
             (context, animation) => _buildAnimatedItem(moved, animation),
             duration: Motion.fast,
           );
-          _listKey.currentState!.insertItem(
-            i,
-            duration: Motion.fast,
-          );
+          _listKey.currentState!.insertItem(i, duration: Motion.fast);
         }
       }
     }
@@ -99,7 +93,8 @@ class _RecycleBinScreenState extends ConsumerState<RecycleBinScreen> {
 
     return Scaffold(
       backgroundColor: colors.bg,
-      body: SafeArea(bottom: false,
+      body: SafeArea(
+        bottom: false,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Column(
@@ -131,24 +126,24 @@ class _RecycleBinScreenState extends ConsumerState<RecycleBinScreen> {
                 child: controller.isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : notes.isEmpty
-                        ? Center(
-                            child: Text(
-                              'Recycle bin is empty',
-                              style: AppTextStyles.secondary.copyWith(
-                                color: colors.textSecondary,
-                              ),
-                            ),
-                          )
-                        : AnimatedList(
-                            key: _listKey,
-                            initialItemCount: _items.length,
-                            padding: EdgeInsets.zero,
-                            primary: false,
-                            itemBuilder: (context, index, animation) {
-                              final note = _items[index];
-                              return _buildAnimatedItem(note, animation);
-                            },
+                    ? Center(
+                        child: Text(
+                          'Recycle bin is empty',
+                          style: AppTextStyles.secondary.copyWith(
+                            color: colors.textSecondary,
                           ),
+                        ),
+                      )
+                    : AnimatedList(
+                        key: _listKey,
+                        initialItemCount: _items.length,
+                        padding: EdgeInsets.zero,
+                        primary: false,
+                        itemBuilder: (context, index, animation) {
+                          final note = _items[index];
+                          return _buildAnimatedItem(note, animation);
+                        },
+                      ),
               ),
             ],
           ),
@@ -198,12 +193,7 @@ class _RecycleNoteCard extends ConsumerWidget {
       lastIndex = match.end;
     }
     if (lastIndex < text.length) {
-      spans.add(
-        TextSpan(
-          text: text.substring(lastIndex),
-          style: baseStyle,
-        ),
-      );
+      spans.add(TextSpan(text: text.substring(lastIndex), style: baseStyle));
     }
     return spans;
   }
@@ -215,6 +205,8 @@ class _RecycleNoteCard extends ConsumerWidget {
       height: 1.2,
       color: colors.textPrimary,
     );
+    final daysLeft = ref.watch(notesProvider).daysUntilTrashAutoDelete(note);
+    final dayLabel = daysLeft == 1 ? '1 day left' : '$daysLeft days left';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -248,10 +240,7 @@ class _RecycleNoteCard extends ConsumerWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: note.content.trim().isEmpty
-                            ? Text(
-                                'Voice note',
-                                style: baseTextStyle,
-                              )
+                            ? Text('Voice note', style: baseTextStyle)
                             : RichText(
                                 text: TextSpan(
                                   children: _buildLinkSpans(
@@ -275,10 +264,28 @@ class _RecycleNoteCard extends ConsumerWidget {
                     ),
                   ),
                 const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        formatNoteDate(note.updatedAt),
+                        style: AppTextStyles.metadata.copyWith(
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      dayLabel,
+                      style: AppTextStyles.metadata.copyWith(
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
                 Text(
-                  formatNoteDate(note.updatedAt),
+                  'Auto-delete after 30 days',
                   style: AppTextStyles.metadata.copyWith(
-                    color: colors.textSecondary,
+                    color: colors.textSecondary.withValues(alpha: 0.85),
                   ),
                 ),
               ],
@@ -351,10 +358,7 @@ class _RecycleNoteCard extends ConsumerWidget {
 }
 
 class _RecycleButtonContent extends StatelessWidget {
-  const _RecycleButtonContent({
-    required this.icon,
-    required this.label,
-  });
+  const _RecycleButtonContent({required this.icon, required this.label});
 
   final IconData icon;
   final String label;
@@ -363,11 +367,7 @@ class _RecycleButtonContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 16),
-        const SizedBox(width: 8),
-        Text(label),
-      ],
+      children: [Icon(icon, size: 16), const SizedBox(width: 8), Text(label)],
     );
   }
 }
