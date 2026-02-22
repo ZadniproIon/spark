@@ -23,11 +23,13 @@ class _VoicePlayerSheetState extends State<VoicePlayerSheet> {
   Duration _position = Duration.zero;
   bool _isPlaying = false;
   bool _isDownloading = false;
+  bool _isCompleted = false;
 
   @override
   void initState() {
     super.initState();
     _player = AudioPlayer();
+    _player.setReleaseMode(ReleaseMode.stop);
 
     final isRemote =
         widget.source.startsWith('http://') ||
@@ -45,13 +47,38 @@ class _VoicePlayerSheetState extends State<VoicePlayerSheet> {
     });
     _player.onPositionChanged.listen((position) {
       if (mounted) {
-        setState(() => _position = position);
+        setState(() {
+          final shouldIgnoreCompletionReset =
+              _isCompleted &&
+              !_isPlaying &&
+              _duration > Duration.zero &&
+              position == Duration.zero;
+          if (shouldIgnoreCompletionReset) {
+            return;
+          }
+          _position = position;
+          if (_duration > Duration.zero && position < _duration) {
+            _isCompleted = false;
+          }
+        });
       }
     });
     _player.onPlayerStateChanged.listen((state) {
       if (mounted) {
         setState(() => _isPlaying = state == PlayerState.playing);
       }
+    });
+    _player.onPlayerComplete.listen((_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isPlaying = false;
+        _isCompleted = true;
+        if (_duration > Duration.zero) {
+          _position = _duration;
+        }
+      });
     });
   }
 
@@ -64,9 +91,22 @@ class _VoicePlayerSheetState extends State<VoicePlayerSheet> {
   Future<void> _togglePlay() async {
     if (_isPlaying) {
       await _player.pause();
-    } else {
-      await _player.resume();
+      return;
     }
+
+    final isAtEnd =
+        _duration > Duration.zero &&
+        _position >= _duration - const Duration(milliseconds: 200);
+    if (_isCompleted || isAtEnd) {
+      await _player.seek(Duration.zero);
+      if (mounted) {
+        setState(() {
+          _position = Duration.zero;
+          _isCompleted = false;
+        });
+      }
+    }
+    await _player.resume();
   }
 
   Future<void> _seek(Duration position) async {
@@ -74,6 +114,13 @@ class _VoicePlayerSheetState extends State<VoicePlayerSheet> {
         ? Duration.zero
         : (position > _duration ? _duration : position);
     await _player.seek(clamped);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _position = clamped;
+      _isCompleted = _duration > Duration.zero && clamped >= _duration;
+    });
   }
 
   Future<void> _download() async {
@@ -178,7 +225,11 @@ class _VoicePlayerSheetState extends State<VoicePlayerSheet> {
                 ),
                 const SizedBox(width: 12),
                 SparkIconButton(
-                  icon: _isPlaying ? LucideIcons.pause : LucideIcons.play,
+                  icon: _isPlaying
+                      ? LucideIcons.pause
+                      : (_isCompleted
+                            ? LucideIcons.rotateCcw
+                            : LucideIcons.play),
                   onPressed: _togglePlay,
                   isCircular: true,
                   borderColor: colors.border,
