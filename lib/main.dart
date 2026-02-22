@@ -27,6 +27,7 @@ Future<void> main() async {
   }
   await Hive.openBox<Note>('notes');
   await Hive.openBox('pending_remote_deletes');
+  await Hive.openBox('app_settings');
   runApp(const ProviderScope(child: SparkApp()));
 }
 

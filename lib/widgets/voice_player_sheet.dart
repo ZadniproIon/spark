@@ -9,10 +9,7 @@ import '../utils/haptics.dart';
 import 'icon_button.dart';
 
 class VoicePlayerSheet extends StatefulWidget {
-  const VoicePlayerSheet({
-    super.key,
-    required this.source,
-  });
+  const VoicePlayerSheet({super.key, required this.source});
 
   final String source;
 
@@ -32,7 +29,8 @@ class _VoicePlayerSheetState extends State<VoicePlayerSheet> {
     super.initState();
     _player = AudioPlayer();
 
-    final isRemote = widget.source.startsWith('http://') ||
+    final isRemote =
+        widget.source.startsWith('http://') ||
         widget.source.startsWith('https://');
     if (isRemote) {
       _player.setSourceUrl(widget.source);
@@ -106,9 +104,10 @@ class _VoicePlayerSheetState extends State<VoicePlayerSheet> {
     final maxSeconds = _duration.inMilliseconds == 0
         ? 1.0
         : _duration.inMilliseconds.toDouble();
-    final currentSeconds = _position.inMilliseconds
-        .toDouble()
-        .clamp(0.0, maxSeconds);
+    final currentSeconds = _position.inMilliseconds.toDouble().clamp(
+      0.0,
+      maxSeconds,
+    );
 
     return SafeArea(
       bottom: false,
@@ -116,10 +115,9 @@ class _VoicePlayerSheetState extends State<VoicePlayerSheet> {
         height: MediaQuery.of(context).size.height * 0.5,
         decoration: BoxDecoration(
           color: colors.bg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border.all(color: colors.border),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
         child: Column(
           children: [
             Row(
@@ -135,7 +133,9 @@ class _VoicePlayerSheetState extends State<VoicePlayerSheet> {
                 ),
                 const Spacer(),
                 SparkIconButton(
-                  icon: _isDownloading ? LucideIcons.loader : LucideIcons.download,
+                  icon: _isDownloading
+                      ? LucideIcons.loader
+                      : LucideIcons.download,
                   onPressed: _isDownloading ? null : _download,
                   isCircular: true,
                   borderColor: colors.border,
@@ -148,14 +148,17 @@ class _VoicePlayerSheetState extends State<VoicePlayerSheet> {
             const Spacer(),
             Text(
               '${_format(_position)} / ${_format(_duration)}',
-              style: AppTextStyles.secondary.copyWith(color: colors.textSecondary),
+              style: AppTextStyles.secondary.copyWith(
+                color: colors.textSecondary,
+              ),
             ),
             const SizedBox(height: 12),
             Slider(
               value: currentSeconds,
               min: 0,
               max: maxSeconds,
-              onChanged: (value) => _seek(Duration(milliseconds: value.round())),
+              onChanged: (value) =>
+                  _seek(Duration(milliseconds: value.round())),
               activeColor: colors.textPrimary,
               inactiveColor: colors.border,
             ),
@@ -165,7 +168,8 @@ class _VoicePlayerSheetState extends State<VoicePlayerSheet> {
               children: [
                 SparkIconButton(
                   icon: LucideIcons.rewind,
-                  onPressed: () => _seek(_position - const Duration(seconds: 3)),
+                  onPressed: () =>
+                      _seek(_position - const Duration(seconds: 3)),
                   isCircular: true,
                   borderColor: colors.border,
                   backgroundColor: colors.bgCard,
@@ -187,7 +191,8 @@ class _VoicePlayerSheetState extends State<VoicePlayerSheet> {
                 const SizedBox(width: 12),
                 SparkIconButton(
                   icon: LucideIcons.fastForward,
-                  onPressed: () => _seek(_position + const Duration(seconds: 3)),
+                  onPressed: () =>
+                      _seek(_position + const Duration(seconds: 3)),
                   isCircular: true,
                   borderColor: colors.border,
                   backgroundColor: colors.bgCard,

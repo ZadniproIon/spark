@@ -67,11 +67,10 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
         curve: Motion.easeOut,
         padding: EdgeInsets.only(bottom: bottomInset),
         child: Container(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 24 + safeBottom),
+          padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + safeBottom),
           decoration: BoxDecoration(
             color: colors.bg,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border.all(color: colors.border),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,

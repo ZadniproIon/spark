@@ -129,10 +129,10 @@ class MenuScreen extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: colors.bg,
                   borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(24),
+                    top: Radius.circular(32),
                   ),
                 ),
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,

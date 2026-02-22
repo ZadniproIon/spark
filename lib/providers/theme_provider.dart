@@ -1,11 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive/hive.dart';
 
-enum ThemePreference {
-  system,
-  light,
-  dark,
-}
+enum ThemePreference { system, light, dark }
 
 extension ThemePreferenceX on ThemePreference {
   ThemeMode get themeMode {
@@ -32,10 +29,29 @@ extension ThemePreferenceX on ThemePreference {
 }
 
 class ThemeController extends StateNotifier<ThemePreference> {
-  ThemeController() : super(ThemePreference.system);
+  ThemeController()
+    : _settingsBox = Hive.box<dynamic>(_settingsBoxName),
+      super(_readInitialPreference(Hive.box<dynamic>(_settingsBoxName)));
+
+  static const String _settingsBoxName = 'app_settings';
+  static const String _themeKey = 'theme_preference';
+
+  final Box<dynamic> _settingsBox;
+
+  static ThemePreference _readInitialPreference(Box<dynamic> box) {
+    final raw = box.get(_themeKey);
+    if (raw is! String) {
+      return ThemePreference.system;
+    }
+    return ThemePreference.values.firstWhere(
+      (value) => value.name == raw,
+      orElse: () => ThemePreference.system,
+    );
+  }
 
   void setTheme(ThemePreference preference) {
     state = preference;
+    _settingsBox.put(_themeKey, preference.name);
   }
 }
 

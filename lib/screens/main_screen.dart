@@ -72,6 +72,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
       backgroundColor: Colors.transparent,
       builder: (_) => const _VoiceRecorderSheet(),
     );
@@ -469,6 +471,7 @@ class _VoiceRecorderSheetState extends ConsumerState<_VoiceRecorderSheet> {
   bool _isRecording = false;
   bool _isPaused = false;
   bool _isSaving = false;
+  bool _hasStartedRecording = false;
 
   @override
   void initState() {
@@ -492,6 +495,7 @@ class _VoiceRecorderSheetState extends ConsumerState<_VoiceRecorderSheet> {
       return;
     }
     setState(() {
+      _hasStartedRecording = true;
       _isRecording = true;
       _isPaused = false;
     });
@@ -576,102 +580,106 @@ class _VoiceRecorderSheetState extends ConsumerState<_VoiceRecorderSheet> {
   @override
   Widget build(BuildContext context) {
     final colors = context.sparkColors;
-    const double modalInset = 28;
-    const double modalRadius = 56;
+    const double modalHorizontalInset = 24;
+    const double modalVerticalInset = 24;
+    const double modalRadius = 32;
     const double controlPadding = 8;
-    return SafeArea(
-      bottom: false,
-      child: Container(
-        height: MediaQuery.of(context).size.height * 0.6,
-        decoration: BoxDecoration(
-          color: colors.bg,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(modalRadius),
-          ),
-        ),
-        padding: const EdgeInsets.symmetric(
-          horizontal: modalInset,
-          vertical: modalInset,
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                SparkIconButton(
-                  icon: LucideIcons.x,
-                  onPressed: _discard,
-                  isCircular: true,
-                  borderColor: colors.border,
-                  backgroundColor: colors.bgCard,
-                  iconColor: colors.textPrimary,
-                  haptic: HapticLevel.light,
-                ),
-                const Spacer(),
-                SparkIconButton(
-                  icon: LucideIcons.check,
-                  onPressed: _isPaused ? _save : null,
-                  isCircular: true,
-                  borderColor: colors.border,
-                  backgroundColor: colors.bgCard,
-                  iconColor: colors.textPrimary,
-                  haptic: HapticLevel.medium,
-                ),
-              ],
+    return PopScope(
+      canPop: !_hasStartedRecording && !_isSaving,
+      child: SafeArea(
+        bottom: false,
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.6,
+          decoration: BoxDecoration(
+            color: colors.bg,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(modalRadius),
             ),
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.all(controlPadding),
-              child: Column(
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: modalHorizontalInset,
+            vertical: modalVerticalInset,
+          ),
+          child: Column(
+            children: [
+              Row(
                 children: [
-                  AnimatedSwitcher(
-                    duration: Motion.fast,
-                    switchInCurve: Motion.easeOut,
-                    switchOutCurve: Curves.easeIn,
-                    transitionBuilder: (child, animation) {
-                      return FadeTransition(opacity: animation, child: child);
-                    },
-                    child: Text(
-                      _format(_elapsed),
-                      key: ValueKey(_elapsed.inMilliseconds ~/ 50),
-                      style: GoogleFonts.jetBrainsMono(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: colors.textPrimary,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
-                    ),
+                  SparkIconButton(
+                    icon: LucideIcons.x,
+                    onPressed: _discard,
+                    isCircular: true,
+                    borderColor: colors.border,
+                    backgroundColor: colors.bgCard,
+                    iconColor: colors.textPrimary,
+                    haptic: HapticLevel.light,
                   ),
-                  const SizedBox(height: 12),
-                  _WaveformMeter(level: _level, color: colors.textSecondary),
-                  const SizedBox(height: 16),
-                  AnimatedScale(
-                    scale: _isRecording ? 1.0 : 0.95,
-                    duration: Motion.fast,
-                    curve: Motion.easeOut,
-                    child: SparkIconButton(
-                      icon: _isPaused ? LucideIcons.play : LucideIcons.pause,
-                      onPressed: _togglePause,
-                      isCircular: true,
-                      backgroundColor: colors.bgCard,
-                      borderColor: colors.border,
-                      iconColor: colors.textPrimary,
-                      padding: 18,
-                      size: 28,
-                      haptic: HapticLevel.light,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    _isPaused ? 'Paused' : 'Recording...',
-                    style: AppTextStyles.secondary.copyWith(
-                      color: colors.textSecondary,
-                    ),
+                  const Spacer(),
+                  SparkIconButton(
+                    icon: LucideIcons.check,
+                    onPressed: _isPaused ? _save : null,
+                    isCircular: true,
+                    borderColor: colors.border,
+                    backgroundColor: colors.bgCard,
+                    iconColor: colors.textPrimary,
+                    haptic: HapticLevel.medium,
                   ),
                 ],
               ),
-            ),
-            const Spacer(),
-          ],
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.all(controlPadding),
+                child: Column(
+                  children: [
+                    AnimatedSwitcher(
+                      duration: Motion.fast,
+                      switchInCurve: Motion.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      transitionBuilder: (child, animation) {
+                        return FadeTransition(opacity: animation, child: child);
+                      },
+                      child: Text(
+                        _format(_elapsed),
+                        key: ValueKey(_elapsed.inMilliseconds ~/ 50),
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          color: colors.textPrimary,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _WaveformMeter(level: _level, color: colors.textSecondary),
+                    const SizedBox(height: 16),
+                    AnimatedScale(
+                      scale: _isRecording ? 1.0 : 0.95,
+                      duration: Motion.fast,
+                      curve: Motion.easeOut,
+                      child: SparkIconButton(
+                        icon: _isPaused ? LucideIcons.play : LucideIcons.pause,
+                        onPressed: _togglePause,
+                        isCircular: true,
+                        backgroundColor: colors.bgCard,
+                        borderColor: colors.border,
+                        iconColor: colors.textPrimary,
+                        padding: 18,
+                        size: 28,
+                        haptic: HapticLevel.light,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      _isPaused ? 'Paused' : 'Recording...',
+                      style: AppTextStyles.secondary.copyWith(
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+            ],
+          ),
         ),
       ),
     );
