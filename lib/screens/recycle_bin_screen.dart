@@ -10,6 +10,7 @@ import '../utils/haptics.dart';
 import '../utils/note_utils.dart';
 import '../utils/motion.dart';
 import '../widgets/icon_button.dart';
+import '../widgets/voice_player_sheet.dart';
 
 class RecycleBinScreen extends ConsumerStatefulWidget {
   const RecycleBinScreen({super.key});
@@ -207,6 +208,10 @@ class _RecycleNoteCard extends ConsumerWidget {
     );
     final daysLeft = ref.watch(notesProvider).daysUntilTrashAutoDelete(note);
     final dayLabel = daysLeft == 1 ? '1 day left' : '$daysLeft days left';
+    final hasAudioSource =
+        note.type == NoteType.voice &&
+        ((note.audioPath != null && note.audioPath!.isNotEmpty) ||
+            (note.audioUrl != null && note.audioUrl!.isNotEmpty));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -223,72 +228,96 @@ class _RecycleNoteCard extends ConsumerWidget {
             ),
             border: Border.all(color: colors.border),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (note.type == NoteType.voice)
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        LucideIcons.mic,
-                        size: 20,
-                        color: colors.textSecondary,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: note.content.trim().isEmpty
-                            ? Text('Voice note', style: baseTextStyle)
-                            : RichText(
-                                text: TextSpan(
-                                  children: _buildLinkSpans(
-                                    note.content,
-                                    baseTextStyle,
-                                    colors.flame,
-                                  ),
-                                ),
-                              ),
-                      ),
-                    ],
-                  )
-                else
-                  RichText(
-                    text: TextSpan(
-                      children: _buildLinkSpans(
-                        note.content,
-                        baseTextStyle,
-                        colors.flame,
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 8),
-                Row(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+                bottomLeft: Radius.circular(4),
+                bottomRight: Radius.circular(4),
+              ),
+              onTap: hasAudioSource
+                  ? () async {
+                      final source = await ref
+                          .read(notesProvider)
+                          .resolveVoiceSource(note);
+                      if (!context.mounted ||
+                          source == null ||
+                          source.isEmpty) {
+                        return;
+                      }
+                      triggerHaptic(ref, HapticLevel.light);
+                      showModalBottomSheet<void>(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => VoicePlayerSheet(source: source),
+                      );
+                    }
+                  : null,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        formatNoteDate(note.updatedAt),
-                        style: AppTextStyles.metadata.copyWith(
-                          color: colors.textSecondary,
+                    if (note.type == NoteType.voice)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            LucideIcons.mic,
+                            size: 20,
+                            color: colors.textSecondary,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: note.content.trim().isEmpty
+                                ? Text('Voice note', style: baseTextStyle)
+                                : RichText(
+                                    text: TextSpan(
+                                      children: _buildLinkSpans(
+                                        note.content,
+                                        baseTextStyle,
+                                        colors.flame,
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      )
+                    else
+                      RichText(
+                        text: TextSpan(
+                          children: _buildLinkSpans(
+                            note.content,
+                            baseTextStyle,
+                            colors.flame,
+                          ),
                         ),
                       ),
-                    ),
-                    Text(
-                      dayLabel,
-                      style: AppTextStyles.metadata.copyWith(
-                        color: colors.textSecondary,
-                      ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            formatNoteDate(note.updatedAt),
+                            style: AppTextStyles.metadata.copyWith(
+                              color: colors.textSecondary,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          dayLabel,
+                          style: AppTextStyles.metadata.copyWith(
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-                Text(
-                  'Auto-delete after 30 days',
-                  style: AppTextStyles.metadata.copyWith(
-                    color: colors.textSecondary.withValues(alpha: 0.85),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
