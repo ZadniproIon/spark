@@ -30,6 +30,16 @@ class AuthController {
 
   Future<void> signInWithGoogle() => _repository.signInWithGoogle();
 
+  Future<void> signInWithEmail({
+    required String email,
+    required String password,
+  }) => _repository.signInWithEmail(email: email, password: password);
+
+  Future<void> signUpWithEmail({
+    required String email,
+    required String password,
+  }) => _repository.signUpWithEmail(email: email, password: password);
+
   Future<void> signOutToGuest() async {
     try {
       await _repository.signOut();
