@@ -452,6 +452,53 @@ class NotesController extends ChangeNotifier {
     }
   }
 
+  Future<String?> resolveVoiceSource(Note note) async {
+    if (note.type != NoteType.voice) {
+      return null;
+    }
+
+    final localPath = note.audioPath;
+    if (localPath != null && localPath.isNotEmpty) {
+      try {
+        final file = File(localPath);
+        if (await file.exists()) {
+          return localPath;
+        }
+      } catch (_) {
+        // Fall back to remote source below.
+      }
+    }
+
+    final remoteRef = note.audioUrl;
+    if (remoteRef == null || remoteRef.isEmpty) {
+      return null;
+    }
+
+    if (_userId == null) {
+      return null;
+    }
+
+    try {
+      final storagePath = _storageRepository.tryExtractPathFromReference(
+        remoteRef,
+      );
+      if (storagePath != null && storagePath.isNotEmpty) {
+        return await _storageRepository.createSignedUrlForPath(
+          path: storagePath,
+        );
+      }
+
+      if (remoteRef.startsWith('http://') || remoteRef.startsWith('https://')) {
+        return remoteRef;
+      }
+
+      return await _storageRepository.createSignedUrlForPath(path: remoteRef);
+    } catch (error) {
+      debugPrint('Signed URL creation failed: $error');
+      return null;
+    }
+  }
+
   Future<Note> _ensureAudioUploaded(Note note) async {
     if (_userId == null || note.type != NoteType.voice) {
       return note;
@@ -465,15 +512,15 @@ class NotesController extends ChangeNotifier {
     }
 
     try {
-      final url = await _storageRepository.uploadNoteAudio(
+      final remotePath = await _storageRepository.uploadNoteAudio(
         uid: _userId!,
         noteId: note.id,
         localPath: localPath,
       );
-      if (url == null) {
+      if (remotePath == null) {
         return note;
       }
-      final updated = note.copyWith(audioUrl: url);
+      final updated = note.copyWith(audioUrl: remotePath);
       await _repository.upsert(updated);
       _replaceLocalNote(updated);
       return updated;

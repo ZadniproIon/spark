@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -39,36 +39,36 @@ Future<void> showNoteContextMenu(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-                _MenuItem(
-                  icon: note.isPinned ? LucideIcons.pinOff : LucideIcons.pin,
-                  label: note.isPinned ? 'Unpin' : 'Pin',
-                  onTap: () async {
-                    triggerHapticFromContext(
-                      sheetContext,
-                      note.isPinned ? HapticLevel.light : HapticLevel.medium,
-                    );
-                    Navigator.of(sheetContext).pop();
-                    await ref.read(notesProvider).togglePin(note);
-                  },
-                ),
-                _MenuItem(
-                  icon: LucideIcons.edit,
-                  label: 'Edit',
-                  onTap: () {
-                    triggerHapticFromContext(sheetContext, HapticLevel.light);
-                    Navigator.of(sheetContext).pop();
-                    Navigator.of(rootContext).pushNamed('/edit', arguments: note);
-                  },
-                ),
-                _MenuItem(
-                  icon: LucideIcons.copy,
-                  label: 'Copy',
-                  onTap: () async {
-                    triggerHapticFromContext(sheetContext, HapticLevel.selection);
-                    Navigator.of(sheetContext).pop();
-                    await Clipboard.setData(ClipboardData(text: note.content));
-                  },
-                ),
+              _MenuItem(
+                icon: note.isPinned ? LucideIcons.pinOff : LucideIcons.pin,
+                label: note.isPinned ? 'Unpin' : 'Pin',
+                onTap: () async {
+                  triggerHapticFromContext(
+                    sheetContext,
+                    note.isPinned ? HapticLevel.light : HapticLevel.medium,
+                  );
+                  Navigator.of(sheetContext).pop();
+                  await ref.read(notesProvider).togglePin(note);
+                },
+              ),
+              _MenuItem(
+                icon: LucideIcons.edit,
+                label: 'Edit',
+                onTap: () {
+                  triggerHapticFromContext(sheetContext, HapticLevel.light);
+                  Navigator.of(sheetContext).pop();
+                  Navigator.of(rootContext).pushNamed('/edit', arguments: note);
+                },
+              ),
+              _MenuItem(
+                icon: LucideIcons.copy,
+                label: 'Copy',
+                onTap: () async {
+                  triggerHapticFromContext(sheetContext, HapticLevel.selection);
+                  Navigator.of(sheetContext).pop();
+                  await Clipboard.setData(ClipboardData(text: note.content));
+                },
+              ),
               if (note.type == NoteType.voice &&
                   (note.audioPath != null || note.audioUrl != null))
                 _MenuItem(
@@ -77,7 +77,12 @@ Future<void> showNoteContextMenu(
                   onTap: () async {
                     triggerHapticFromContext(sheetContext, HapticLevel.light);
                     Navigator.of(sheetContext).pop();
-                    final source = note.audioPath ?? note.audioUrl;
+                    final source = await ref
+                        .read(notesProvider)
+                        .resolveVoiceSource(note);
+                    if (!rootContext.mounted) {
+                      return;
+                    }
                     if (source == null || source.isEmpty) {
                       return;
                     }
@@ -109,9 +114,7 @@ Future<void> showNoteContextMenu(
 }
 
 class _LinkSection extends StatelessWidget {
-  const _LinkSection({
-    required this.urls,
-  });
+  const _LinkSection({required this.urls});
 
   final List<String> urls;
 
@@ -137,15 +140,8 @@ class _LinkSection extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         for (int i = 0; i < urls.length; i++) ...[
-          _LinkRow(
-            url: urls[i],
-            label: _labelForUrl(urls[i]),
-          ),
-          Divider(
-            height: 1,
-            thickness: 1,
-            color: colors.border,
-          ),
+          _LinkRow(url: urls[i], label: _labelForUrl(urls[i])),
+          Divider(height: 1, thickness: 1, color: colors.border),
         ],
       ],
     );
@@ -153,10 +149,7 @@ class _LinkSection extends StatelessWidget {
 }
 
 class _LinkRow extends StatelessWidget {
-  const _LinkRow({
-    required this.url,
-    required this.label,
-  });
+  const _LinkRow({required this.url, required this.label});
 
   final String url;
   final String label;
@@ -201,10 +194,7 @@ class _LinkRow extends StatelessWidget {
 }
 
 class _LinkAction extends StatelessWidget {
-  const _LinkAction({
-    required this.icon,
-    required this.onTap,
-  });
+  const _LinkAction({required this.icon, required this.onTap});
 
   final IconData icon;
   final VoidCallback onTap;
@@ -219,11 +209,7 @@ class _LinkAction extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(6),
-          child: Icon(
-            icon,
-            size: 18,
-            color: colors.textPrimary,
-          ),
+          child: Icon(icon, size: 18, color: colors.textPrimary),
         ),
       ),
     );
@@ -271,12 +257,7 @@ class _MenuItem extends StatelessWidget {
             ),
           ),
         ),
-        if (showDivider)
-          Divider(
-            height: 1,
-            thickness: 1,
-            color: colors.border,
-          ),
+        if (showDivider) Divider(height: 1, thickness: 1, color: colors.border),
       ],
     );
   }

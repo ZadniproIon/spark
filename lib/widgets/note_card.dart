@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../models/note.dart';
 import '../providers/auth_provider.dart';
+import '../providers/notes_provider.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
 import '../utils/haptics.dart';
@@ -61,7 +62,9 @@ class NoteCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.sparkColors;
-    final audioSource = note.audioPath ?? note.audioUrl;
+    final hasAudioSource =
+        (note.audioPath != null && note.audioPath!.isNotEmpty) ||
+        (note.audioUrl != null && note.audioUrl!.isNotEmpty);
     final baseTextStyle = AppTextStyles.primary.copyWith(
       height: 1.2,
       color: colors.textPrimary,
@@ -85,14 +88,20 @@ class NoteCard extends ConsumerWidget {
             triggerHapticFromContext(context, HapticLevel.medium);
             showNoteContextMenu(context, ref, note);
           },
-          onTap: note.type == NoteType.voice && audioSource != null
-              ? () {
+          onTap: note.type == NoteType.voice && hasAudioSource
+              ? () async {
+                  final source = await ref
+                      .read(notesProvider)
+                      .resolveVoiceSource(note);
+                  if (!context.mounted || source == null || source.isEmpty) {
+                    return;
+                  }
                   triggerHapticFromContext(context, HapticLevel.light);
                   showModalBottomSheet<void>(
                     context: context,
                     isScrollControlled: true,
                     backgroundColor: Colors.transparent,
-                    builder: (_) => VoicePlayerSheet(source: audioSource),
+                    builder: (_) => VoicePlayerSheet(source: source),
                   );
                 }
               : null,
