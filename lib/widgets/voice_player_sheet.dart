@@ -1,10 +1,10 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../utils/audio_download.dart';
 import '../theme/colors.dart';
-import '../theme/text_styles.dart';
 import '../utils/haptics.dart';
 import 'icon_button.dart';
 
@@ -193,10 +193,22 @@ class _VoicePlayerSheetState extends State<VoicePlayerSheet> {
               ],
             ),
             const Spacer(),
-            Text(
-              '${_format(_position)} / ${_format(_duration)}',
-              style: AppTextStyles.secondary.copyWith(
-                color: colors.textSecondary,
+            RichText(
+              text: TextSpan(
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                ),
+                children: [
+                  TextSpan(
+                    text: _format(_position),
+                    style: TextStyle(color: colors.textPrimary),
+                  ),
+                  TextSpan(
+                    text: ' / ${_format(_duration)}',
+                    style: TextStyle(color: colors.textSecondary),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 12),

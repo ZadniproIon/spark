@@ -589,7 +589,7 @@ class _VoiceRecorderSheetState extends ConsumerState<_VoiceRecorderSheet> {
       child: SafeArea(
         bottom: false,
         child: Container(
-          height: MediaQuery.of(context).size.height * 0.6,
+          height: MediaQuery.of(context).size.height * 0.5,
           decoration: BoxDecoration(
             color: colors.bg,
             borderRadius: const BorderRadius.vertical(
