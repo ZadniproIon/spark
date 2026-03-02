@@ -294,7 +294,7 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
               Divider(height: 1, thickness: 1, color: colors.border),
               const SizedBox(height: 8),
               _AuthActionButton(
-                icon: LucideIcons.globe,
+                iconWidget: const _GoogleIcon(),
                 label: 'Continue with Google',
                 onTap: _isLoading ? null : _handleGoogle,
                 haptic: HapticLevel.medium,
@@ -370,12 +370,14 @@ class _AuthActionButton extends StatelessWidget {
   const _AuthActionButton({
     required this.label,
     this.icon,
+    this.iconWidget,
     this.onTap,
     this.haptic = HapticLevel.light,
   });
 
   final String label;
   final IconData? icon;
+  final Widget? iconWidget;
   final VoidCallback? onTap;
   final HapticLevel haptic;
 
@@ -406,7 +408,10 @@ class _AuthActionButton extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (icon != null) ...[
+                  if (iconWidget != null) ...[
+                    iconWidget!,
+                    const SizedBox(width: 8),
+                  ] else if (icon != null) ...[
                     Icon(icon, size: 20, color: colors.textPrimary),
                     const SizedBox(width: 8),
                   ],
@@ -425,4 +430,277 @@ class _AuthActionButton extends StatelessWidget {
       ),
     );
   }
+}
+
+class _GoogleIcon extends StatelessWidget {
+  const _GoogleIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 20,
+      height: 20,
+      child: FittedBox(
+        fit: BoxFit.contain,
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: Stack(
+            children: const [
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _GoogleIconPathPainter(
+                    'M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z',
+                    Color(0xFFFFC107),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _GoogleIconPathPainter(
+                    'M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z',
+                    Color(0xFFFF3D00),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _GoogleIconPathPainter(
+                    'M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z',
+                    Color(0xFF4CAF50),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _GoogleIconPathPainter(
+                    'M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z',
+                    Color(0xFF1976D2),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GoogleIconPathPainter extends CustomPainter {
+  const _GoogleIconPathPainter(this.pathData, this.color);
+
+  final String pathData;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final scaleX = size.width / 48;
+    final scaleY = size.height / 48;
+    canvas.save();
+    canvas.scale(scaleX, scaleY);
+    final path = _SvgPathParser(pathData).parse();
+    canvas.drawPath(path, Paint()..color = color);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _GoogleIconPathPainter oldDelegate) {
+    return oldDelegate.pathData != pathData || oldDelegate.color != color;
+  }
+}
+
+class _SvgPathParser {
+  _SvgPathParser(this._input);
+
+  final String _input;
+  int _index = 0;
+  late String _command;
+  final Path _path = Path();
+  Offset _current = Offset.zero;
+  Offset _start = Offset.zero;
+  Offset _lastControl = Offset.zero;
+  bool _hasLastControl = false;
+
+  Path parse() {
+    while (_skipSeparators()) {
+      final char = _peek();
+      if (_isCommand(char)) {
+        _command = _next();
+      } else if (_command.isEmpty) {
+        throw FormatException('Invalid path data near index $_index');
+      }
+      _readCommand();
+    }
+    return _path;
+  }
+
+  void _readCommand() {
+    switch (_command) {
+      case 'M':
+      case 'm':
+        _readMoveTo(relative: _command == 'm');
+        break;
+      case 'L':
+      case 'l':
+        _readLineTo(relative: _command == 'l');
+        break;
+      case 'H':
+      case 'h':
+        _readHorizontalTo(relative: _command == 'h');
+        break;
+      case 'V':
+      case 'v':
+        _readVerticalTo(relative: _command == 'v');
+        break;
+      case 'C':
+      case 'c':
+        _readCubicTo(relative: _command == 'c');
+        break;
+      case 'S':
+      case 's':
+        _readSmoothCubicTo(relative: _command == 's');
+        break;
+      case 'Z':
+      case 'z':
+        _path.close();
+        _current = _start;
+        _hasLastControl = false;
+        break;
+      default:
+        throw FormatException('Unsupported SVG command: $_command');
+    }
+  }
+
+  void _readMoveTo({required bool relative}) {
+    final first = _readPoint(relative: relative);
+    _path.moveTo(first.dx, first.dy);
+    _current = first;
+    _start = first;
+    _hasLastControl = false;
+
+    while (_hasNumberAhead()) {
+      final point = _readPoint(relative: relative);
+      _path.lineTo(point.dx, point.dy);
+      _current = point;
+    }
+  }
+
+  void _readLineTo({required bool relative}) {
+    while (_hasNumberAhead()) {
+      final point = _readPoint(relative: relative);
+      _path.lineTo(point.dx, point.dy);
+      _current = point;
+    }
+    _hasLastControl = false;
+  }
+
+  void _readHorizontalTo({required bool relative}) {
+    while (_hasNumberAhead()) {
+      final x = _readNumber();
+      final target = Offset(relative ? _current.dx + x : x, _current.dy);
+      _path.lineTo(target.dx, target.dy);
+      _current = target;
+    }
+    _hasLastControl = false;
+  }
+
+  void _readVerticalTo({required bool relative}) {
+    while (_hasNumberAhead()) {
+      final y = _readNumber();
+      final target = Offset(_current.dx, relative ? _current.dy + y : y);
+      _path.lineTo(target.dx, target.dy);
+      _current = target;
+    }
+    _hasLastControl = false;
+  }
+
+  void _readCubicTo({required bool relative}) {
+    while (_hasNumberAhead()) {
+      final c1 = _readPoint(relative: relative);
+      final c2 = _readPoint(relative: relative);
+      final end = _readPoint(relative: relative);
+      _path.cubicTo(c1.dx, c1.dy, c2.dx, c2.dy, end.dx, end.dy);
+      _current = end;
+      _lastControl = c2;
+      _hasLastControl = true;
+    }
+  }
+
+  void _readSmoothCubicTo({required bool relative}) {
+    while (_hasNumberAhead()) {
+      final reflected = _hasLastControl
+          ? Offset(2 * _current.dx - _lastControl.dx, 2 * _current.dy - _lastControl.dy)
+          : _current;
+      final c2 = _readPoint(relative: relative);
+      final end = _readPoint(relative: relative);
+      _path.cubicTo(reflected.dx, reflected.dy, c2.dx, c2.dy, end.dx, end.dy);
+      _current = end;
+      _lastControl = c2;
+      _hasLastControl = true;
+    }
+  }
+
+  Offset _readPoint({required bool relative}) {
+    final x = _readNumber();
+    final y = _readNumber();
+    if (relative) {
+      return Offset(_current.dx + x, _current.dy + y);
+    }
+    return Offset(x, y);
+  }
+
+  bool _skipSeparators() {
+    while (_index < _input.length) {
+      final c = _input.codeUnitAt(_index);
+      if (c == 32 || c == 44 || c == 10 || c == 13 || c == 9) {
+        _index++;
+      } else {
+        break;
+      }
+    }
+    return _index < _input.length;
+  }
+
+  bool _hasNumberAhead() {
+    if (!_skipSeparators()) return false;
+    final char = _peek();
+    if (_isCommand(char)) return false;
+    return true;
+  }
+
+  double _readNumber() {
+    _skipSeparators();
+    final start = _index;
+    if (_peek() == '+' || _peek() == '-') {
+      _index++;
+    }
+    while (_index < _input.length && _isDigit(_input.codeUnitAt(_index))) {
+      _index++;
+    }
+    if (_index < _input.length && _input.codeUnitAt(_index) == 46) {
+      _index++;
+      while (_index < _input.length && _isDigit(_input.codeUnitAt(_index))) {
+        _index++;
+      }
+    }
+    if (_index < _input.length &&
+        (_input.codeUnitAt(_index) == 69 || _input.codeUnitAt(_index) == 101)) {
+      _index++;
+      if (_peek() == '+' || _peek() == '-') {
+        _index++;
+      }
+      while (_index < _input.length && _isDigit(_input.codeUnitAt(_index))) {
+        _index++;
+      }
+    }
+    final token = _input.substring(start, _index);
+    return double.parse(token);
+  }
+
+  String _peek() => _input[_index];
+  String _next() => _input[_index++];
+
+  bool _isDigit(int codeUnit) => codeUnit >= 48 && codeUnit <= 57;
+  bool _isCommand(String c) => 'MmLlHhVvCcSsZz'.contains(c);
 }
