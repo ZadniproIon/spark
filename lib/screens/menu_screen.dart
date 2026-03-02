@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/haptics_provider.dart';
@@ -23,6 +24,27 @@ class MenuScreen extends ConsumerWidget {
   const MenuScreen({super.key, this.onBack});
 
   final VoidCallback? onBack;
+
+  String _authProviderLabel(User user) {
+    final provider = user.appMetadata['provider']?.toString().toLowerCase();
+    switch (provider) {
+      case 'google':
+        return 'Google';
+      case 'email':
+        return 'Email + password';
+      default:
+        return 'Signed-in account';
+    }
+  }
+
+  String _accountSubtitleForUser(User user) {
+    final providerLabel = _authProviderLabel(user);
+    final email = user.email;
+    if (email == null || email.isEmpty) {
+      return providerLabel;
+    }
+    return '$providerLabel • $email';
+  }
 
   Future<void> _launchUrl(BuildContext context, String url) async {
     final uri = Uri.parse(url);
@@ -296,8 +318,7 @@ class MenuScreen extends ConsumerWidget {
     final accountTitle = isGuest ? 'Guest mode' : 'Signed in';
     final accountSubtitle = isGuest
         ? 'Notes stay on this device until you sign in.'
-        : (user.email ?? 'Google account');
-    final accountPillLabel = isGuest ? 'Guest' : 'Synced';
+        : _accountSubtitleForUser(user);
 
     return Scaffold(
       backgroundColor: colors.bg,
@@ -486,61 +507,13 @@ class MenuScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: colors.bgCard,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: colors.border),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            accountTitle,
-                            style: AppTextStyles.primary.copyWith(
-                              color: colors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            accountSubtitle,
-                            style: AppTextStyles.secondary.copyWith(
-                              color: colors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colors.bg,
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(color: colors.border),
-                      ),
-                      child: Text(
-                        accountPillLabel,
-                        style: AppTextStyles.secondary.copyWith(
-                          fontSize: 12,
-                          color: colors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
               if (isGuest) ...[
                 _MenuGroup(
                   children: [
+                    _MenuAccountSummary(
+                      title: accountTitle,
+                      subtitle: accountSubtitle,
+                    ),
                     _MenuItem(
                       icon: LucideIcons.logIn,
                       label: 'Sign in to sync',
@@ -554,6 +527,10 @@ class MenuScreen extends ConsumerWidget {
               ] else ...[
                 _MenuGroup(
                   children: [
+                    _MenuAccountSummary(
+                      title: accountTitle,
+                      subtitle: accountSubtitle,
+                    ),
                     _MenuItem(
                       icon: LucideIcons.externalLink,
                       label: 'Manage Google account',
@@ -693,6 +670,40 @@ class _MenuItem extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MenuAccountSummary extends StatelessWidget {
+  const _MenuAccountSummary({required this.title, required this.subtitle});
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.sparkColors;
+    return SizedBox(
+      width: double.infinity,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: AppTextStyles.primary.copyWith(color: colors.textPrimary),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: AppTextStyles.secondary.copyWith(
+                color: colors.textSecondary,
+              ),
+            ),
+          ],
         ),
       ),
     );
