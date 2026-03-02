@@ -8,7 +8,6 @@ import '../theme/colors.dart';
 import '../theme/text_styles.dart';
 import '../utils/haptics.dart';
 import '../utils/motion.dart';
-import 'icon_button.dart';
 import 'loading_overlay.dart';
 
 Future<void> showAuthSheet(BuildContext context) async {
@@ -220,36 +219,15 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  SparkIconButton(
-                    icon: LucideIcons.x,
-                    onPressed: () => Navigator.of(context).pop(),
-                    isCircular: true,
-                    borderColor: colors.border,
-                    backgroundColor: colors.bgCard,
-                    iconColor: colors.textPrimary,
-                    haptic: HapticLevel.light,
+              Center(
+                child: Text(
+                  'Sign in',
+                  style: AppTextStyles.section.copyWith(
+                    color: colors.textPrimary,
                   ),
-                  const Spacer(),
-                  Text(
-                    'Sign in',
-                    style: AppTextStyles.section.copyWith(
-                      color: colors.textPrimary,
-                    ),
-                  ),
-                  const Spacer(),
-                  const SizedBox(width: 40),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Guest notes merge into your account when you sign in.',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.secondary.copyWith(
-                  color: colors.textSecondary,
                 ),
               ),
+              const SizedBox(height: 16),
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 Text(
@@ -257,14 +235,14 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
                   style: AppTextStyles.secondary.copyWith(color: colors.red),
                 ),
               ],
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
               _AuthInputField(
                 controller: _emailController,
                 hintText: 'Email',
                 keyboardType: TextInputType.emailAddress,
                 enabled: !_isLoading,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               _AuthInputField(
                 controller: _passwordController,
                 hintText: 'Password',
@@ -290,7 +268,7 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   Expanded(
@@ -312,7 +290,9 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
+              Divider(height: 1, thickness: 1, color: colors.border),
+              const SizedBox(height: 8),
               _AuthActionButton(
                 icon: LucideIcons.globe,
                 label: 'Continue with Google',
@@ -348,10 +328,10 @@ class _AuthInputField extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.sparkColors;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: colors.bgCard,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: colors.border),
       ),
       child: Row(
@@ -370,9 +350,13 @@ class _AuthInputField extends StatelessWidget {
                 isDense: true,
                 hintStyle: AppTextStyles.secondary.copyWith(
                   color: colors.textSecondary,
+                  height: 1.2,
                 ),
               ),
-              style: AppTextStyles.primary.copyWith(color: colors.textPrimary),
+              style: AppTextStyles.primary.copyWith(
+                color: colors.textPrimary,
+                height: 1.2,
+              ),
             ),
           ),
           if (trailing != null) ...[const SizedBox(width: 8), trailing!],
@@ -398,35 +382,44 @@ class _AuthActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.sparkColors;
-    return GestureDetector(
-      onTap: onTap == null
-          ? null
-          : () {
-              triggerHapticFromContext(context, haptic);
-              onTap?.call();
-            },
-      child: AnimatedOpacity(
-        opacity: onTap == null ? 0.6 : 1,
-        duration: Motion.fast,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    return AnimatedOpacity(
+      opacity: onTap == null ? 0.6 : 1,
+      duration: Motion.fast,
+      child: Material(
+        color: Colors.transparent,
+        child: Ink(
           decoration: BoxDecoration(
             color: colors.bgCard,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(color: colors.border),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (icon != null) ...[
-                Icon(icon, size: 18, color: colors.textPrimary),
-                const SizedBox(width: 8),
-              ],
-              Text(
-                label,
-                style: AppTextStyles.button.copyWith(color: colors.textPrimary),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: onTap == null
+                ? null
+                : () {
+                    triggerHapticFromContext(context, haptic);
+                    onTap?.call();
+                  },
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, size: 20, color: colors.textPrimary),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(
+                    label,
+                    style: AppTextStyles.button.copyWith(
+                      color: colors.textPrimary,
+                      height: 1.2,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
