@@ -18,6 +18,7 @@ import '../theme/text_styles.dart';
 import '../utils/haptics.dart';
 import '../utils/motion.dart';
 import '../widgets/auth_sheet.dart';
+import '../widgets/loading_overlay.dart';
 import 'recycle_bin_screen.dart';
 
 class MenuScreen extends ConsumerWidget {
@@ -534,9 +535,19 @@ class MenuScreen extends ConsumerWidget {
                     _MenuItem(
                       icon: LucideIcons.logOut,
                       label: 'Log out',
-                      onTap: () {
+                      onTap: () async {
                         triggerHaptic(ref, HapticLevel.light);
-                        ref.read(authControllerProvider).signOutToGuest();
+                        try {
+                          await withLoadingOverlay(
+                            context,
+                            label: 'Signing out',
+                            action: () => ref
+                                .read(authControllerProvider)
+                                .signOutToGuest(),
+                          );
+                        } catch (_) {
+                          // Sign-out errors are non-critical; auth state handles the fallback.
+                        }
                       },
                     ),
                     _MenuItem(

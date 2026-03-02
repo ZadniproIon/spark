@@ -9,6 +9,7 @@ import '../theme/text_styles.dart';
 import '../utils/haptics.dart';
 import '../utils/motion.dart';
 import 'icon_button.dart';
+import 'loading_overlay.dart';
 
 Future<void> showAuthSheet(BuildContext context) async {
   await showModalBottomSheet<void>(
@@ -46,7 +47,11 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
       _error = null;
     });
     try {
-      await ref.read(authControllerProvider).signInWithGoogle();
+      await withLoadingOverlay(
+        context,
+        label: 'Signing in',
+        action: () => ref.read(authControllerProvider).signInWithGoogle(),
+      );
       if (mounted) {
         Navigator.of(context).pop();
       }
@@ -84,28 +89,34 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
     });
 
     try {
-      if (signUp) {
-        await ref
-            .read(authControllerProvider)
-            .signUpWithEmail(email: email, password: password);
+      await withLoadingOverlay(
+        context,
+        label: signUp ? 'Creating account' : 'Signing in',
+        action: () async {
+          if (signUp) {
+            await ref
+                .read(authControllerProvider)
+                .signUpWithEmail(email: email, password: password);
 
-        final authController = ref.read(authControllerProvider);
-        if (authController.currentUser == null) {
-          try {
-            await authController.signInWithEmail(
-              email: email,
-              password: password,
-            );
-          } catch (_) {
-            // If email confirmation is enabled (or any sign-in restriction applies),
-            // fall back to the informational message below.
+            final authController = ref.read(authControllerProvider);
+            if (authController.currentUser == null) {
+              try {
+                await authController.signInWithEmail(
+                  email: email,
+                  password: password,
+                );
+              } catch (_) {
+                // If email confirmation is enabled (or any sign-in restriction applies),
+                // fall back to the informational message below.
+              }
+            }
+          } else {
+            await ref
+                .read(authControllerProvider)
+                .signInWithEmail(email: email, password: password);
           }
-        }
-      } else {
-        await ref
-            .read(authControllerProvider)
-            .signInWithEmail(email: email, password: password);
-      }
+        },
+      );
 
       if (!mounted) {
         return;
@@ -308,19 +319,6 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
                 onTap: _isLoading ? null : _handleGoogle,
                 haptic: HapticLevel.medium,
               ),
-              if (_isLoading) ...[
-                const SizedBox(height: 12),
-                Center(
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: colors.textSecondary,
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
         ),
