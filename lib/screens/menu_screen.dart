@@ -532,14 +532,6 @@ class MenuScreen extends ConsumerWidget {
                       subtitle: accountSubtitle,
                     ),
                     _MenuItem(
-                      icon: LucideIcons.externalLink,
-                      label: 'Manage Google account',
-                      onTap: () {
-                        triggerHaptic(ref, HapticLevel.light);
-                        _launchUrl(context, 'https://myaccount.google.com/');
-                      },
-                    ),
-                    _MenuItem(
                       icon: LucideIcons.logOut,
                       label: 'Log out',
                       onTap: () {
