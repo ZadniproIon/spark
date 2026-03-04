@@ -1,8 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppTextStyles {
+  static const String fontFamily = 'DMSans';
+
   static TextStyle title = _dmSans(fontSize: 22, fontWeight: FontWeight.w600);
   static TextStyle section = _dmSans(fontSize: 16, fontWeight: FontWeight.w600);
   static TextStyle primary = _dmSans(fontSize: 16, fontWeight: FontWeight.w400);
@@ -20,10 +21,11 @@ class AppTextStyles {
     required double fontSize,
     required FontWeight fontWeight,
   }) {
-    return GoogleFonts.dmSans(
+    return TextStyle(
+      fontFamily: fontFamily,
       fontSize: fontSize,
       fontWeight: fontWeight,
-      textStyle: TextStyle(fontFamilyFallback: _emojiFallbackFamilies),
+      fontFamilyFallback: _emojiFallbackFamilies,
     );
   }
 

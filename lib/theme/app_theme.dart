@@ -1,5 +1,4 @@
 ﻿import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'colors.dart';
 import 'text_styles.dart';
@@ -14,7 +13,9 @@ class AppTheme {
   }
 
   static ThemeData _buildTheme(ThemeData base, SparkColors colors) {
-    final textTheme = GoogleFonts.dmSansTextTheme(base.textTheme).copyWith(
+    final textTheme = base.textTheme
+        .apply(fontFamily: AppTextStyles.fontFamily)
+        .copyWith(
       titleLarge: AppTextStyles.title.copyWith(color: colors.textPrimary),
       titleMedium: AppTextStyles.section.copyWith(color: colors.textPrimary),
       bodyLarge: AppTextStyles.primary.copyWith(color: colors.textPrimary),
