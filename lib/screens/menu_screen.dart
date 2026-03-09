@@ -40,6 +40,18 @@ String _friendlyAccountError(Object error) {
         code == 'reauthentication_needed') {
       return 'Please sign in again, then retry this action.';
     }
+    if (code == 'single_identity_not_deletable' ||
+        message.contains('only sign-in method') ||
+        message.contains('at least two identities') ||
+        message.contains('only identity')) {
+      return 'Google cannot be disconnected because it is the only sign-in method.';
+    }
+    if (message.contains('manual linking')) {
+      return 'Google disconnect is not enabled on the server.';
+    }
+    if (message.contains('identity') && message.contains('not found')) {
+      return 'Google sign-in is already disconnected.';
+    }
     return error.message;
   }
 
@@ -54,6 +66,29 @@ class MenuScreen extends ConsumerWidget {
   const MenuScreen({super.key, this.onBack});
 
   final VoidCallback? onBack;
+
+  bool _hasGoogleIdentity(User user) {
+    final identities = user.identities;
+    if (identities != null &&
+        identities.any(
+          (identity) => identity.provider.toLowerCase() == 'google',
+        )) {
+      return true;
+    }
+
+    final providers = user.appMetadata['providers'];
+    if (providers is List &&
+        providers.any(
+          (provider) => provider.toString().toLowerCase() == 'google',
+        )) {
+      return true;
+    }
+
+    final primaryProvider = user.appMetadata['provider']
+        ?.toString()
+        .toLowerCase();
+    return primaryProvider == 'google';
+  }
 
   String _authProviderLabel(User user) {
     final provider = user.appMetadata['provider']?.toString().toLowerCase();
@@ -180,6 +215,132 @@ class MenuScreen extends ConsumerWidget {
         SnackBar(
           content: Text(
             'Password updated.',
+            style: AppTextStyles.secondary.copyWith(color: colors.textPrimary),
+          ),
+          backgroundColor: colors.bgCard,
+        ),
+      );
+    }
+  }
+
+  Future<void> _showDisconnectGoogleSheet(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final colors = context.sparkColors;
+    final messenger = ScaffoldMessenger.of(context);
+    final shouldDisconnect = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
+      builder: (sheetContext) {
+        return SafeArea(
+          top: false,
+          child: Container(
+            decoration: BoxDecoration(
+              color: colors.bg,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(32),
+              ),
+            ),
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Disconnect Google sign-in',
+                  style: AppTextStyles.primary.copyWith(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: colors.red,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'After disconnecting, this account will no longer accept Google login.',
+                  style: AppTextStyles.secondary.copyWith(
+                    color: colors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(sheetContext).pop(false),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: colors.border),
+                          foregroundColor: colors.textPrimary,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: AppTextStyles.primary.copyWith(
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(sheetContext).pop(true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colors.red,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: Text(
+                          'Disconnect',
+                          style: AppTextStyles.primary.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (shouldDisconnect != true || !context.mounted) {
+      return;
+    }
+
+    try {
+      await withLoadingOverlay(
+        context,
+        label: 'Disconnecting Google',
+        action: () =>
+            ref.read(authControllerProvider).disconnectGoogleIdentity(),
+      );
+      if (!context.mounted) {
+        return;
+      }
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Google sign-in disconnected.',
+            style: AppTextStyles.secondary.copyWith(color: colors.textPrimary),
+          ),
+          backgroundColor: colors.bgCard,
+        ),
+      );
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            _friendlyAccountError(error),
             style: AppTextStyles.secondary.copyWith(color: colors.textPrimary),
           ),
           backgroundColor: colors.bgCard,
@@ -390,6 +551,7 @@ class MenuScreen extends ConsumerWidget {
     final authState = ref.watch(authStateProvider);
     final user = authState.valueOrNull;
     final isGuest = user == null;
+    final isGoogleLinked = user != null && _hasGoogleIdentity(user);
 
     final accountTitle = isGuest ? 'Guest mode' : 'Signed in';
     final accountSubtitle = isGuest
@@ -641,6 +803,16 @@ class MenuScreen extends ConsumerWidget {
                         _showChangePasswordSheet(context);
                       },
                     ),
+                    if (isGoogleLinked)
+                      _MenuItem(
+                        icon: LucideIcons.shield,
+                        label: 'Disconnect Google sign-in',
+                        isDestructive: true,
+                        onTap: () {
+                          triggerHaptic(ref, HapticLevel.medium);
+                          _showDisconnectGoogleSheet(context, ref);
+                        },
+                      ),
                     _MenuItem(
                       icon: LucideIcons.userX,
                       label: 'Delete account',
@@ -702,11 +874,16 @@ class _ChangeEmailSheetState extends ConsumerState<_ChangeEmailSheet> {
             children: [
               Text(
                 'Change email',
-                style: AppTextStyles.section.copyWith(color: colors.textPrimary),
+                style: AppTextStyles.section.copyWith(
+                  color: colors.textPrimary,
+                ),
               ),
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: colors.bgCard,
                   borderRadius: BorderRadius.circular(8),
@@ -725,7 +902,9 @@ class _ChangeEmailSheetState extends ConsumerState<_ChangeEmailSheet> {
                       color: colors.textSecondary,
                     ),
                   ),
-                  style: AppTextStyles.primary.copyWith(color: colors.textPrimary),
+                  style: AppTextStyles.primary.copyWith(
+                    color: colors.textPrimary,
+                  ),
                 ),
               ),
               if (_error != null) ...[
@@ -742,7 +921,9 @@ class _ChangeEmailSheetState extends ConsumerState<_ChangeEmailSheet> {
                     : () async {
                         final email = _emailController.text.trim();
                         if (email.isEmpty || !email.contains('@')) {
-                          setState(() => _error = 'Enter a valid email address.');
+                          setState(
+                            () => _error = 'Enter a valid email address.',
+                          );
                           return;
                         }
 
@@ -758,7 +939,9 @@ class _ChangeEmailSheetState extends ConsumerState<_ChangeEmailSheet> {
                           Navigator.of(context).pop(true);
                         } catch (error) {
                           if (mounted) {
-                            setState(() => _error = _friendlyAccountError(error));
+                            setState(
+                              () => _error = _friendlyAccountError(error),
+                            );
                           }
                         } finally {
                           if (mounted) {
@@ -830,11 +1013,16 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
             children: [
               Text(
                 'Change password',
-                style: AppTextStyles.section.copyWith(color: colors.textPrimary),
+                style: AppTextStyles.section.copyWith(
+                  color: colors.textPrimary,
+                ),
               ),
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: colors.bgCard,
                   borderRadius: BorderRadius.circular(8),
@@ -864,7 +1052,9 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
                       onPressed: _isSaving
                           ? null
                           : () {
-                              setState(() => _obscurePassword = !_obscurePassword);
+                              setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              );
                             },
                       icon: Icon(
                         _obscurePassword ? LucideIcons.eye : LucideIcons.eyeOff,
@@ -877,7 +1067,10 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
               ),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: colors.bgCard,
                   borderRadius: BorderRadius.circular(8),
@@ -907,7 +1100,9 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
                       onPressed: _isSaving
                           ? null
                           : () {
-                              setState(() => _obscureConfirm = !_obscureConfirm);
+                              setState(
+                                () => _obscureConfirm = !_obscureConfirm,
+                              );
                             },
                       icon: Icon(
                         _obscureConfirm ? LucideIcons.eye : LucideIcons.eyeOff,
@@ -956,7 +1151,9 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
                           Navigator.of(context).pop(true);
                         } catch (error) {
                           if (mounted) {
-                            setState(() => _error = _friendlyAccountError(error));
+                            setState(
+                              () => _error = _friendlyAccountError(error),
+                            );
                           }
                         } finally {
                           if (mounted) {

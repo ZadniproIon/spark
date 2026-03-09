@@ -64,6 +64,40 @@ class AuthRepository {
     await _client.auth.updateUser(UserAttributes(password: password));
   }
 
+  Future<void> disconnectGoogleIdentity() async {
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      throw const AuthException('No signed-in user.');
+    }
+
+    final identities = await _client.auth.getUserIdentities();
+    final googleIdentities = identities
+        .where((identity) => _isGoogleIdentity(identity))
+        .toList(growable: false);
+
+    if (googleIdentities.isEmpty) {
+      throw const AuthException(
+        'Google sign-in is not linked to this account.',
+      );
+    }
+
+    if (identities.length == googleIdentities.length) {
+      throw const AuthException(
+        'Google cannot be disconnected because it is the only sign-in method on this account.',
+      );
+    }
+
+    for (final identity in googleIdentities) {
+      await _client.auth.unlinkIdentity(identity);
+    }
+
+    try {
+      await _client.auth.refreshSession();
+    } catch (_) {
+      // Unlink succeeded; skip refresh failure to avoid reporting a false error.
+    }
+  }
+
   Future<void> deleteCurrentAccount() async {
     final user = _client.auth.currentUser;
     if (user == null) {
@@ -98,5 +132,9 @@ class AuthRepository {
       'Account deletion RPC not found. Deploy `${SupabaseConfig.deleteAccountRpc}` in Supabase.',
       statusCode: lastRpcError?.code,
     );
+  }
+
+  bool _isGoogleIdentity(UserIdentity identity) {
+    return identity.provider.toLowerCase() == 'google';
   }
 }

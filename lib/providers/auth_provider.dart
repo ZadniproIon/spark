@@ -46,6 +46,9 @@ class AuthController {
   Future<void> updatePassword({required String password}) =>
       _repository.updatePassword(password: password);
 
+  Future<void> disconnectGoogleIdentity() =>
+      _repository.disconnectGoogleIdentity();
+
   Future<void> signOutToGuest() async {
     try {
       await _repository.signOut();
