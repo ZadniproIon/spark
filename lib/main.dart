@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -14,12 +16,16 @@ import 'screens/main_screen.dart';
 import 'screens/menu_screen.dart';
 import 'screens/notes_screen.dart';
 import 'theme/app_theme.dart';
+import 'widgets/auth_sheet.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Supabase.initialize(
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
+    authOptions: const FlutterAuthClientOptions(
+      authFlowType: AuthFlowType.implicit,
+    ),
   );
   await Hive.initFlutter();
   if (!Hive.isAdapterRegistered(1)) {
@@ -68,10 +74,19 @@ class HomeShell extends ConsumerStatefulWidget {
 class _HomeShellState extends ConsumerState<HomeShell> {
   final PageController _controller = PageController(initialPage: 1);
   int _pageIndex = 1;
+  StreamSubscription<AuthState>? _authStateSubscription;
+  bool _isRecoverySheetOpen = false;
 
   @override
   void initState() {
     super.initState();
+    _authStateSubscription = Supabase.instance.client.auth.onAuthStateChange
+        .listen((authState) {
+          if (authState.event == AuthChangeEvent.passwordRecovery) {
+            _openPasswordRecoverySheet();
+          }
+        });
+
     Future<void>.microtask(() async {
       try {
         await ref.read(authControllerProvider).ensureGuest();
@@ -89,8 +104,25 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     );
   }
 
+  void _openPasswordRecoverySheet() {
+    if (!mounted || _isRecoverySheetOpen) {
+      return;
+    }
+
+    _isRecoverySheetOpen = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) {
+        _isRecoverySheetOpen = false;
+        return;
+      }
+      await showPasswordRecoverySheet(context);
+      _isRecoverySheetOpen = false;
+    });
+  }
+
   @override
   void dispose() {
+    _authStateSubscription?.cancel();
     _controller.dispose();
     super.dispose();
   }

@@ -19,6 +19,29 @@ Future<void> showAuthSheet(BuildContext context) async {
   );
 }
 
+Future<void> showPasswordRecoverySheet(BuildContext context) async {
+  final colors = context.sparkColors;
+  final messenger = ScaffoldMessenger.of(context);
+  final didUpdate = await showModalBottomSheet<bool>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => const _PasswordRecoverySheet(),
+  );
+
+  if (didUpdate == true && context.mounted) {
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          'Password updated.',
+          style: AppTextStyles.secondary.copyWith(color: colors.textPrimary),
+        ),
+        backgroundColor: colors.bgCard,
+      ),
+    );
+  }
+}
+
 class AuthSheet extends ConsumerStatefulWidget {
   const AuthSheet({super.key});
 
@@ -71,6 +94,51 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
 
   Future<void> _handleEmailSignUp() async {
     await _handleEmailAuth(signUp: true);
+  }
+
+  Future<void> _handleForgotPassword() async {
+    final colors = context.sparkColors;
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      setState(() => _error = 'Enter your email first to reset password.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      await withLoadingOverlay(
+        context,
+        label: 'Sending reset email',
+        action: () => ref
+            .read(authControllerProvider)
+            .sendPasswordResetEmail(email: email),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Password reset email sent. Open the link, then set a new password.',
+            style: AppTextStyles.secondary.copyWith(color: colors.textPrimary),
+          ),
+          backgroundColor: colors.bgCard,
+        ),
+      );
+    } catch (error) {
+      if (mounted) {
+        setState(() => _error = _friendlyAuthError(error));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   Future<void> _handleEmailAuth({required bool signUp}) async {
@@ -268,6 +336,27 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
                   ),
                 ),
               ),
+              const SizedBox(height: 4),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: _isLoading ? null : _handleForgotPassword,
+                  style: TextButton.styleFrom(
+                    minimumSize: Size.zero,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 6,
+                    ),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    'Forgot password?',
+                    style: AppTextStyles.secondary.copyWith(
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                ),
+              ),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -297,6 +386,191 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
                 iconWidget: const _GoogleIcon(),
                 label: 'Continue with Google',
                 onTap: _isLoading ? null : _handleGoogle,
+                haptic: HapticLevel.medium,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PasswordRecoverySheet extends ConsumerStatefulWidget {
+  const _PasswordRecoverySheet();
+
+  @override
+  ConsumerState<_PasswordRecoverySheet> createState() =>
+      _PasswordRecoverySheetState();
+}
+
+class _PasswordRecoverySheetState
+    extends ConsumerState<_PasswordRecoverySheet> {
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmController = TextEditingController();
+  bool _isSaving = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirm = true;
+  String? _error;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    _confirmController.dispose();
+    super.dispose();
+  }
+
+  String _friendlyRecoveryError(Object error) {
+    if (error is AuthApiException) {
+      final code = error.code?.toLowerCase() ?? '';
+      final message = error.message.toLowerCase();
+
+      if (code == 'weak_password' || message.contains('weak password')) {
+        return 'Password is too weak. Try a stronger password.';
+      }
+      if (code == 'same_password' || message.contains('same password')) {
+        return 'New password must be different from the current password.';
+      }
+      if (message.contains('expired') || message.contains('invalid token')) {
+        return 'Recovery link expired. Request a new password reset email.';
+      }
+      return error.message;
+    }
+
+    if (error is AuthException && error.message.isNotEmpty) {
+      return error.message;
+    }
+
+    return 'Something went wrong. Please try again.';
+  }
+
+  Future<void> _submit() async {
+    final password = _passwordController.text;
+    final confirm = _confirmController.text;
+    if (password.length < 8) {
+      setState(() => _error = 'Use at least 8 characters for password.');
+      return;
+    }
+    if (password != confirm) {
+      setState(() => _error = 'Passwords do not match.');
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+      _error = null;
+    });
+
+    try {
+      await ref.read(authControllerProvider).updatePassword(password: password);
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (mounted) {
+        setState(() => _error = _friendlyRecoveryError(error));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.sparkColors;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final safeBottom = MediaQuery.of(context).viewPadding.bottom;
+    return SafeArea(
+      bottom: false,
+      child: AnimatedPadding(
+        duration: Motion.keyboard,
+        curve: Motion.easeOut,
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: Container(
+          padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + safeBottom),
+          decoration: BoxDecoration(
+            color: colors.bg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Text(
+                  'Set new password',
+                  style: AppTextStyles.section.copyWith(
+                    color: colors.textPrimary,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              _AuthInputField(
+                controller: _passwordController,
+                hintText: 'New password',
+                obscureText: _obscurePassword,
+                enabled: !_isSaving,
+                trailing: GestureDetector(
+                  onTap: _isSaving
+                      ? null
+                      : () {
+                          triggerHapticFromContext(
+                            context,
+                            HapticLevel.selection,
+                          );
+                          setState(() => _obscurePassword = !_obscurePassword);
+                        },
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(
+                      _obscurePassword ? LucideIcons.eye : LucideIcons.eyeOff,
+                      size: 18,
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              _AuthInputField(
+                controller: _confirmController,
+                hintText: 'Confirm new password',
+                obscureText: _obscureConfirm,
+                enabled: !_isSaving,
+                trailing: GestureDetector(
+                  onTap: _isSaving
+                      ? null
+                      : () {
+                          triggerHapticFromContext(
+                            context,
+                            HapticLevel.selection,
+                          );
+                          setState(() => _obscureConfirm = !_obscureConfirm);
+                        },
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(
+                      _obscureConfirm ? LucideIcons.eye : LucideIcons.eyeOff,
+                      size: 18,
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                ),
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                  _error!,
+                  style: AppTextStyles.secondary.copyWith(color: colors.red),
+                ),
+              ],
+              const SizedBox(height: 16),
+              _AuthActionButton(
+                icon: LucideIcons.check,
+                label: _isSaving ? 'Saving...' : 'Save password',
+                onTap: _isSaving ? null : _submit,
                 haptic: HapticLevel.medium,
               ),
             ],
@@ -630,7 +904,10 @@ class _SvgPathParser {
   void _readSmoothCubicTo({required bool relative}) {
     while (_hasNumberAhead()) {
       final reflected = _hasLastControl
-          ? Offset(2 * _current.dx - _lastControl.dx, 2 * _current.dy - _lastControl.dy)
+          ? Offset(
+              2 * _current.dx - _lastControl.dx,
+              2 * _current.dy - _lastControl.dy,
+            )
           : _current;
       final c2 = _readPoint(relative: relative);
       final end = _readPoint(relative: relative);

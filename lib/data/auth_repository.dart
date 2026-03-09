@@ -39,6 +39,13 @@ class AuthRepository {
     await _client.auth.signUp(email: email, password: password);
   }
 
+  Future<void> sendPasswordResetEmail({required String email}) async {
+    await _client.auth.resetPasswordForEmail(
+      email,
+      redirectTo: SupabaseConfig.authRedirectUrl,
+    );
+  }
+
   Future<void> signOut() async {
     await _client.auth.signOut();
   }

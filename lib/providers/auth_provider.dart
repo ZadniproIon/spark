@@ -40,6 +40,9 @@ class AuthController {
     required String password,
   }) => _repository.signUpWithEmail(email: email, password: password);
 
+  Future<void> sendPasswordResetEmail({required String email}) =>
+      _repository.sendPasswordResetEmail(email: email);
+
   Future<void> updateEmail({required String email}) =>
       _repository.updateEmail(email: email);
 
