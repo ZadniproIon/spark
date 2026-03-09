@@ -21,6 +21,35 @@ import '../widgets/auth_sheet.dart';
 import '../widgets/loading_overlay.dart';
 import 'recycle_bin_screen.dart';
 
+String _friendlyAccountError(Object error) {
+  if (error is AuthApiException) {
+    final code = error.code?.toLowerCase() ?? '';
+    final message = error.message.toLowerCase();
+
+    if (code == 'weak_password' || message.contains('weak password')) {
+      return 'Password is too weak. Try a stronger password.';
+    }
+    if (code == 'same_password' || message.contains('same password')) {
+      return 'New password must be different from the current password.';
+    }
+    if (code == 'email_address_invalid' ||
+        (message.contains('email') && message.contains('invalid'))) {
+      return 'Please enter a valid email address.';
+    }
+    if (message.contains('reauthentication') ||
+        code == 'reauthentication_needed') {
+      return 'Please sign in again, then retry this action.';
+    }
+    return error.message;
+  }
+
+  if (error is AuthException && error.message.isNotEmpty) {
+    return error.message;
+  }
+
+  return 'Something went wrong. Please try again.';
+}
+
 class MenuScreen extends ConsumerWidget {
   const MenuScreen({super.key, this.onBack});
 
@@ -105,6 +134,52 @@ class MenuScreen extends ConsumerWidget {
         SnackBar(
           content: Text(
             'Unable to open email app.',
+            style: AppTextStyles.secondary.copyWith(color: colors.textPrimary),
+          ),
+          backgroundColor: colors.bgCard,
+        ),
+      );
+    }
+  }
+
+  Future<void> _showChangeEmailSheet(BuildContext context) async {
+    final colors = context.sparkColors;
+    final messenger = ScaffoldMessenger.of(context);
+    final didUpdate = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _ChangeEmailSheet(),
+    );
+
+    if (didUpdate == true) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Email update requested. Check your inbox to confirm.',
+            style: AppTextStyles.secondary.copyWith(color: colors.textPrimary),
+          ),
+          backgroundColor: colors.bgCard,
+        ),
+      );
+    }
+  }
+
+  Future<void> _showChangePasswordSheet(BuildContext context) async {
+    final colors = context.sparkColors;
+    final messenger = ScaffoldMessenger.of(context);
+    final didUpdate = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _ChangePasswordSheet(),
+    );
+
+    if (didUpdate == true) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Password updated.',
             style: AppTextStyles.secondary.copyWith(color: colors.textPrimary),
           ),
           backgroundColor: colors.bgCard,
@@ -551,6 +626,22 @@ class MenuScreen extends ConsumerWidget {
                       },
                     ),
                     _MenuItem(
+                      icon: LucideIcons.mail,
+                      label: 'Change email',
+                      onTap: () {
+                        triggerHaptic(ref, HapticLevel.light);
+                        _showChangeEmailSheet(context);
+                      },
+                    ),
+                    _MenuItem(
+                      icon: LucideIcons.lock,
+                      label: 'Change password',
+                      onTap: () {
+                        triggerHaptic(ref, HapticLevel.light);
+                        _showChangePasswordSheet(context);
+                      },
+                    ),
+                    _MenuItem(
                       icon: LucideIcons.userX,
                       label: 'Delete account',
                       isDestructive: true,
@@ -562,6 +653,327 @@ class MenuScreen extends ConsumerWidget {
                   ],
                 ),
               ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChangeEmailSheet extends ConsumerStatefulWidget {
+  const _ChangeEmailSheet();
+
+  @override
+  ConsumerState<_ChangeEmailSheet> createState() => _ChangeEmailSheetState();
+}
+
+class _ChangeEmailSheetState extends ConsumerState<_ChangeEmailSheet> {
+  final TextEditingController _emailController = TextEditingController();
+  bool _isSaving = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.sparkColors;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final safeBottom = MediaQuery.of(context).viewPadding.bottom;
+    return SafeArea(
+      bottom: false,
+      child: AnimatedPadding(
+        duration: Motion.keyboard,
+        curve: Motion.easeOut,
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: Container(
+          padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + safeBottom),
+          decoration: BoxDecoration(
+            color: colors.bg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Change email',
+                style: AppTextStyles.section.copyWith(color: colors.textPrimary),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: colors.bgCard,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: colors.border),
+                ),
+                child: TextField(
+                  controller: _emailController,
+                  enabled: !_isSaving,
+                  keyboardType: TextInputType.emailAddress,
+                  autocorrect: false,
+                  decoration: InputDecoration(
+                    hintText: 'New email',
+                    border: InputBorder.none,
+                    isDense: true,
+                    hintStyle: AppTextStyles.secondary.copyWith(
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                  style: AppTextStyles.primary.copyWith(color: colors.textPrimary),
+                ),
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                  _error!,
+                  style: AppTextStyles.secondary.copyWith(color: colors.red),
+                ),
+              ],
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _isSaving
+                    ? null
+                    : () async {
+                        final email = _emailController.text.trim();
+                        if (email.isEmpty || !email.contains('@')) {
+                          setState(() => _error = 'Enter a valid email address.');
+                          return;
+                        }
+
+                        setState(() {
+                          _isSaving = true;
+                          _error = null;
+                        });
+                        try {
+                          await ref
+                              .read(authControllerProvider)
+                              .updateEmail(email: email);
+                          if (!context.mounted) return;
+                          Navigator.of(context).pop(true);
+                        } catch (error) {
+                          if (mounted) {
+                            setState(() => _error = _friendlyAccountError(error));
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() => _isSaving = false);
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colors.flame,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: Text(
+                  _isSaving ? 'Saving...' : 'Save email',
+                  style: AppTextStyles.button.copyWith(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChangePasswordSheet extends ConsumerStatefulWidget {
+  const _ChangePasswordSheet();
+
+  @override
+  ConsumerState<_ChangePasswordSheet> createState() =>
+      _ChangePasswordSheetState();
+}
+
+class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmController = TextEditingController();
+  bool _isSaving = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirm = true;
+  String? _error;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    _confirmController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.sparkColors;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final safeBottom = MediaQuery.of(context).viewPadding.bottom;
+    return SafeArea(
+      bottom: false,
+      child: AnimatedPadding(
+        duration: Motion.keyboard,
+        curve: Motion.easeOut,
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: Container(
+          padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + safeBottom),
+          decoration: BoxDecoration(
+            color: colors.bg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Change password',
+                style: AppTextStyles.section.copyWith(color: colors.textPrimary),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: colors.bgCard,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: colors.border),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _passwordController,
+                        enabled: !_isSaving,
+                        obscureText: _obscurePassword,
+                        decoration: InputDecoration(
+                          hintText: 'New password',
+                          border: InputBorder.none,
+                          isDense: true,
+                          hintStyle: AppTextStyles.secondary.copyWith(
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                        style: AppTextStyles.primary.copyWith(
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: _isSaving
+                          ? null
+                          : () {
+                              setState(() => _obscurePassword = !_obscurePassword);
+                            },
+                      icon: Icon(
+                        _obscurePassword ? LucideIcons.eye : LucideIcons.eyeOff,
+                        size: 18,
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: colors.bgCard,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: colors.border),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _confirmController,
+                        enabled: !_isSaving,
+                        obscureText: _obscureConfirm,
+                        decoration: InputDecoration(
+                          hintText: 'Confirm new password',
+                          border: InputBorder.none,
+                          isDense: true,
+                          hintStyle: AppTextStyles.secondary.copyWith(
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                        style: AppTextStyles.primary.copyWith(
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: _isSaving
+                          ? null
+                          : () {
+                              setState(() => _obscureConfirm = !_obscureConfirm);
+                            },
+                      icon: Icon(
+                        _obscureConfirm ? LucideIcons.eye : LucideIcons.eyeOff,
+                        size: 18,
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                  _error!,
+                  style: AppTextStyles.secondary.copyWith(color: colors.red),
+                ),
+              ],
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _isSaving
+                    ? null
+                    : () async {
+                        final password = _passwordController.text;
+                        final confirm = _confirmController.text;
+                        if (password.length < 8) {
+                          setState(
+                            () => _error =
+                                'Use at least 8 characters for password.',
+                          );
+                          return;
+                        }
+                        if (password != confirm) {
+                          setState(() => _error = 'Passwords do not match.');
+                          return;
+                        }
+
+                        setState(() {
+                          _isSaving = true;
+                          _error = null;
+                        });
+                        try {
+                          await ref
+                              .read(authControllerProvider)
+                              .updatePassword(password: password);
+                          if (!context.mounted) return;
+                          Navigator.of(context).pop(true);
+                        } catch (error) {
+                          if (mounted) {
+                            setState(() => _error = _friendlyAccountError(error));
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() => _isSaving = false);
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colors.flame,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: Text(
+                  _isSaving ? 'Saving...' : 'Save password',
+                  style: AppTextStyles.button.copyWith(color: Colors.white),
+                ),
+              ),
             ],
           ),
         ),
@@ -664,12 +1076,14 @@ class _MenuItem extends StatelessWidget {
                     style: AppTextStyles.primary.copyWith(color: color),
                   ),
                 ),
-                trailing ??
-                    Icon(
-                      LucideIcons.chevronRight,
-                      size: 18,
-                      color: colors.textSecondary,
-                    ),
+                if (trailing != null)
+                  trailing!
+                else
+                  Icon(
+                    LucideIcons.chevronRight,
+                    size: 18,
+                    color: colors.textSecondary,
+                  ),
               ],
             ),
           ),

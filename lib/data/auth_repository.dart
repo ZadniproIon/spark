@@ -43,6 +43,27 @@ class AuthRepository {
     await _client.auth.signOut();
   }
 
+  Future<void> updateEmail({required String email}) async {
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      throw const AuthException('No signed-in user.');
+    }
+
+    await _client.auth.updateUser(
+      UserAttributes(email: email),
+      emailRedirectTo: SupabaseConfig.authRedirectUrl,
+    );
+  }
+
+  Future<void> updatePassword({required String password}) async {
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      throw const AuthException('No signed-in user.');
+    }
+
+    await _client.auth.updateUser(UserAttributes(password: password));
+  }
+
   Future<void> deleteCurrentAccount() async {
     final user = _client.auth.currentUser;
     if (user == null) {

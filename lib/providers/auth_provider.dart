@@ -40,6 +40,12 @@ class AuthController {
     required String password,
   }) => _repository.signUpWithEmail(email: email, password: password);
 
+  Future<void> updateEmail({required String email}) =>
+      _repository.updateEmail(email: email);
+
+  Future<void> updatePassword({required String password}) =>
+      _repository.updatePassword(password: password);
+
   Future<void> signOutToGuest() async {
     try {
       await _repository.signOut();
