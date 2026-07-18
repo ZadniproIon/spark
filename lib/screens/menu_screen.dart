@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -668,7 +668,7 @@ class MenuScreen extends ConsumerWidget {
                     },
                   ),
                   _MenuItem(
-                    icon: LucideIcons.github,
+                    icon: LucideIcons.gitBranch,
                     label: 'GitHub repository',
                     onTap: () {
                       triggerHaptic(ref, HapticLevel.light);
