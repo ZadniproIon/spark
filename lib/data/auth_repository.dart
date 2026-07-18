@@ -46,6 +46,10 @@ class AuthRepository {
     );
   }
 
+  Future<void> resendConfirmationEmail({required String email}) async {
+    await _client.auth.resend(type: OtpType.signup, email: email);
+  }
+
   Future<void> signOut() async {
     await _client.auth.signOut();
   }

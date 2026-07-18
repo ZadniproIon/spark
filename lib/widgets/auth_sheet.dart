@@ -54,7 +54,12 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _error;
+  String? _unconfirmedEmail;
   bool _obscurePassword = true;
+
+  bool _isValidEmail(String email) {
+    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
+  }
 
   @override
   void dispose() {
@@ -99,8 +104,8 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
   Future<void> _handleForgotPassword() async {
     final colors = context.sparkColors;
     final email = _emailController.text.trim();
-    if (email.isEmpty || !email.contains('@')) {
-      setState(() => _error = 'Enter your email first to reset password.');
+    if (email.isEmpty || !_isValidEmail(email)) {
+      setState(() => _error = 'Enter a valid email first to reset password.');
       return;
     }
 
@@ -150,9 +155,20 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
       return;
     }
 
+    if (!_isValidEmail(email)) {
+      setState(() => _error = 'Please enter a valid email address.');
+      return;
+    }
+
+    if (signUp && password.length < 8) {
+      setState(() => _error = 'Use at least 8 characters for password.');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _error = null;
+      _unconfirmedEmail = null;
     });
 
     try {
@@ -197,6 +213,49 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
         setState(() {
           _error =
               'Account created. If email confirmation is enabled, check your inbox.';
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        if (error is AuthApiException &&
+            (error.code?.toLowerCase() == 'email_not_confirmed' ||
+                error.message.toLowerCase().contains('email not confirmed'))) {
+          setState(() {
+            _error = 'Please confirm your email before signing in.';
+            _unconfirmedEmail = email;
+          });
+        } else {
+          setState(() => _error = _friendlyAuthError(error));
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _handleResendConfirmation() async {
+    final email = _unconfirmedEmail;
+    if (email == null) return;
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      await withLoadingOverlay(
+        context,
+        label: 'Resending...',
+        action: () => ref
+            .read(authControllerProvider)
+            .resendConfirmationEmail(email: email),
+      );
+      if (mounted) {
+        setState(() {
+          _error = 'Confirmation email sent to $email.';
+          _unconfirmedEmail = null;
         });
       }
     } catch (error) {
@@ -302,12 +361,31 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
                   _error!,
                   style: AppTextStyles.secondary.copyWith(color: colors.red),
                 ),
+                if (_unconfirmedEmail != null) ...[
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                      onPressed: _isLoading ? null : _handleResendConfirmation,
+                      style: TextButton.styleFrom(
+                        minimumSize: Size.zero,
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        'Resend confirmation email',
+                        style: AppTextStyles.button.copyWith(color: colors.flame),
+                      ),
+                    ),
+                  ),
+                ],
               ],
               const SizedBox(height: 8),
               _AuthInputField(
                 controller: _emailController,
                 hintText: 'Email',
                 keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
                 enabled: !_isLoading,
               ),
               const SizedBox(height: 8),
@@ -315,6 +393,8 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
                 controller: _passwordController,
                 hintText: 'Password',
                 obscureText: _obscurePassword,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _handleEmailSignIn(),
                 enabled: !_isLoading,
                 trailing: GestureDetector(
                   onTap: _isLoading
@@ -512,6 +592,7 @@ class _PasswordRecoverySheetState
                 controller: _passwordController,
                 hintText: 'New password',
                 obscureText: _obscurePassword,
+                textInputAction: TextInputAction.next,
                 enabled: !_isSaving,
                 trailing: GestureDetector(
                   onTap: _isSaving
@@ -538,6 +619,8 @@ class _PasswordRecoverySheetState
                 controller: _confirmController,
                 hintText: 'Confirm new password',
                 obscureText: _obscureConfirm,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _submit(),
                 enabled: !_isSaving,
                 trailing: GestureDetector(
                   onTap: _isSaving
@@ -588,6 +671,8 @@ class _AuthInputField extends StatelessWidget {
     this.keyboardType,
     this.obscureText = false,
     this.enabled = true,
+    this.textInputAction,
+    this.onSubmitted,
     this.trailing,
   });
 
@@ -596,6 +681,8 @@ class _AuthInputField extends StatelessWidget {
   final TextInputType? keyboardType;
   final bool obscureText;
   final bool enabled;
+  final TextInputAction? textInputAction;
+  final void Function(String)? onSubmitted;
   final Widget? trailing;
 
   @override
@@ -615,6 +702,8 @@ class _AuthInputField extends StatelessWidget {
               controller: controller,
               enabled: enabled,
               keyboardType: keyboardType,
+              textInputAction: textInputAction,
+              onSubmitted: onSubmitted,
               obscureText: obscureText,
               autocorrect: false,
               enableSuggestions: !obscureText,

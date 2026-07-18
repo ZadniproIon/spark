@@ -851,6 +851,36 @@ class _ChangeEmailSheetState extends ConsumerState<_ChangeEmailSheet> {
     super.dispose();
   }
 
+  Future<void> _submit() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      setState(
+        () => _error = 'Enter a valid email address.',
+      );
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+      _error = null;
+    });
+    try {
+      await ref.read(authControllerProvider).updateEmail(email: email);
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _error = _friendlyAccountError(error),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.sparkColors;
@@ -915,48 +945,33 @@ class _ChangeEmailSheetState extends ConsumerState<_ChangeEmailSheet> {
                 ),
               ],
               const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _isSaving
-                    ? null
-                    : () async {
-                        final email = _emailController.text.trim();
-                        if (email.isEmpty || !email.contains('@')) {
-                          setState(
-                            () => _error = 'Enter a valid email address.',
-                          );
-                          return;
-                        }
-
-                        setState(() {
-                          _isSaving = true;
-                          _error = null;
-                        });
-                        try {
-                          await ref
-                              .read(authControllerProvider)
-                              .updateEmail(email: email);
-                          if (!context.mounted) return;
-                          Navigator.of(context).pop(true);
-                        } catch (error) {
-                          if (mounted) {
-                            setState(
-                              () => _error = _friendlyAccountError(error),
-                            );
-                          }
-                        } finally {
-                          if (mounted) {
-                            setState(() => _isSaving = false);
-                          }
-                        }
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colors.flame,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                child: Text(
-                  _isSaving ? 'Saving...' : 'Save email',
-                  style: AppTextStyles.button.copyWith(color: Colors.white),
+              GestureDetector(
+                onTap: _isSaving ? null : _submit,
+                child: AnimatedOpacity(
+                  opacity: _isSaving ? 0.6 : 1.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.bgCard,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: colors.border),
+                    ),
+                    child: Center(
+                      child: Text(
+                        _isSaving ? 'Saving...' : 'Save email',
+                        style: AppTextStyles.primary.copyWith(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -988,6 +1003,39 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
     _passwordController.dispose();
     _confirmController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final password = _passwordController.text;
+    final confirm = _confirmController.text;
+    if (password.length < 8) {
+      setState(
+        () => _error = 'Use at least 8 characters for password.',
+      );
+      return;
+    }
+    if (password != confirm) {
+      setState(() => _error = 'Passwords do not match.');
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+      _error = null;
+    });
+    try {
+      await ref.read(authControllerProvider).updatePassword(password: password);
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (mounted) {
+        setState(() => _error = _friendlyAccountError(error));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
   }
 
   @override
@@ -1035,6 +1083,7 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
                         controller: _passwordController,
                         enabled: !_isSaving,
                         obscureText: _obscurePassword,
+                        textInputAction: TextInputAction.next,
                         decoration: InputDecoration(
                           hintText: 'New password',
                           border: InputBorder.none,
@@ -1083,6 +1132,8 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
                         controller: _confirmController,
                         enabled: !_isSaving,
                         obscureText: _obscureConfirm,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => _submit(),
                         decoration: InputDecoration(
                           hintText: 'Confirm new password',
                           border: InputBorder.none,
@@ -1121,54 +1172,33 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
                 ),
               ],
               const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _isSaving
-                    ? null
-                    : () async {
-                        final password = _passwordController.text;
-                        final confirm = _confirmController.text;
-                        if (password.length < 8) {
-                          setState(
-                            () => _error =
-                                'Use at least 8 characters for password.',
-                          );
-                          return;
-                        }
-                        if (password != confirm) {
-                          setState(() => _error = 'Passwords do not match.');
-                          return;
-                        }
-
-                        setState(() {
-                          _isSaving = true;
-                          _error = null;
-                        });
-                        try {
-                          await ref
-                              .read(authControllerProvider)
-                              .updatePassword(password: password);
-                          if (!context.mounted) return;
-                          Navigator.of(context).pop(true);
-                        } catch (error) {
-                          if (mounted) {
-                            setState(
-                              () => _error = _friendlyAccountError(error),
-                            );
-                          }
-                        } finally {
-                          if (mounted) {
-                            setState(() => _isSaving = false);
-                          }
-                        }
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colors.flame,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                child: Text(
-                  _isSaving ? 'Saving...' : 'Save password',
-                  style: AppTextStyles.button.copyWith(color: Colors.white),
+              GestureDetector(
+                onTap: _isSaving ? null : _submit,
+                child: AnimatedOpacity(
+                  opacity: _isSaving ? 0.6 : 1.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.bgCard,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: colors.border),
+                    ),
+                    child: Center(
+                      child: Text(
+                        _isSaving ? 'Saving...' : 'Save password',
+                        style: AppTextStyles.primary.copyWith(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],

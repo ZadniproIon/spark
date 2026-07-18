@@ -43,6 +43,9 @@ class AuthController {
   Future<void> sendPasswordResetEmail({required String email}) =>
       _repository.sendPasswordResetEmail(email: email);
 
+  Future<void> resendConfirmationEmail({required String email}) =>
+      _repository.resendConfirmationEmail(email: email);
+
   Future<void> updateEmail({required String email}) =>
       _repository.updateEmail(email: email);
 

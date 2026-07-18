@@ -7,6 +7,7 @@ import '../providers/notes_provider.dart';
 import '../theme/colors.dart';
 import '../theme/text_styles.dart';
 import '../utils/haptics.dart';
+import '../utils/note_utils.dart';
 import '../widgets/icon_button.dart';
 
 class EditNoteScreen extends ConsumerStatefulWidget {
@@ -24,7 +25,7 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.note.content);
+    _controller = _UrlHighlightTextController(text: widget.note.content);
   }
 
   @override
@@ -103,5 +104,57 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
         ),
       ),
     );
+  }
+}
+
+class _UrlHighlightTextController extends TextEditingController {
+  _UrlHighlightTextController({super.text});
+
+  @override
+  TextSpan buildTextSpan({
+    required BuildContext context,
+    TextStyle? style,
+    required bool withComposing,
+  }) {
+    if (text.isEmpty) {
+      return const TextSpan(text: '');
+    }
+
+    final baseStyle = style ?? const TextStyle();
+    final linkColor = context.sparkColors.flame;
+    final matches = urlRegex.allMatches(text).toList();
+
+    if (matches.isEmpty) {
+      return TextSpan(text: text, style: baseStyle);
+    }
+
+    final spans = <TextSpan>[];
+    int lastIndex = 0;
+    for (final match in matches) {
+      if (match.start > lastIndex) {
+        spans.add(
+          TextSpan(
+            text: text.substring(lastIndex, match.start),
+            style: baseStyle,
+          ),
+        );
+      }
+      final linkText = text.substring(match.start, match.end);
+      spans.add(
+        TextSpan(
+          text: linkText,
+          style: baseStyle.copyWith(
+            color: linkColor,
+            decoration: TextDecoration.underline,
+            decorationColor: linkColor,
+          ),
+        ),
+      );
+      lastIndex = match.end;
+    }
+    if (lastIndex < text.length) {
+      spans.add(TextSpan(text: text.substring(lastIndex), style: baseStyle));
+    }
+    return TextSpan(children: spans);
   }
 }

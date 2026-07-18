@@ -1,7 +1,7 @@
-﻿import 'package:intl/intl.dart';
+import 'package:intl/intl.dart';
 
 final RegExp urlRegex = RegExp(
-  r'(https?:\/\/[^\s]+)|(www\.[^\s]+)',
+  r"""(?:(?:https?:\/\/)(?:[^\s]*[^.,!?;:'"\s\)])?)|(?:(?<!@)\b(?:www\.)?(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:[\/?#](?:[^\s]*[^.,!?;:'"\s\)])?)?)""",
   caseSensitive: false,
 );
 
